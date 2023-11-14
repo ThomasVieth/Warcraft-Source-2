@@ -24,18 +24,9 @@ using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
-using CounterStrikeSharp.API.Modules.Entities;
-using System.Numerics;
-using System.Drawing;
 
 namespace WCS
 {
-    enum Interfaces
-    {
-        Engine,
-        Server
-    }
-
     public static class WarcraftPlayerExtensions
     {
         public static WarcraftPlayer GetWarcraftPlayer(this CCSPlayerController player)
@@ -101,7 +92,7 @@ namespace WCS
         public static WCS Instance => _instance;
 
         public override string ModuleName => "WarcraftSource2";
-        public override string ModuleVersion => "0.0.1";
+        public override string ModuleVersion => "2.0.0";
         public string ModuleChatPrefix = $" {ChatColors.Green}[WCS2]: ";
 
         public int AdvertIndex = 0;
@@ -127,6 +118,7 @@ namespace WCS
 
         public List<WarcraftPlayer> Players => WarcraftPlayers.Values.ToList();
 
+        // UTILITIES
         public WarcraftPlayer GetWcPlayer(CCSPlayerController player)
         {
             WarcraftPlayers.TryGetValue(player.Handle, out var wcPlayer);
@@ -150,6 +142,7 @@ namespace WCS
             WarcraftPlayers[player.Handle] = wcPlayer;
         }
 
+        // LOAD AND UNLOAD
         public override void Load(bool hotReload)
         {
             base.Load(hotReload);
@@ -169,16 +162,9 @@ namespace WCS
             AddCommand("spendskills", "spendskills", (client, _) => ShowSkillPointMenu(GetWcPlayer(client)));
             AddCommand("wcsadmin", "wcsadmin", ShowAdminMenu);
 
-            // XpPerKill = new ConVar("wcgo_xp_kill", "20", "Base amount of xp granted for a kill",
-            //     ConVarFlags.None);
-            // XpHeadshotModifier = new ConVar("wcgo_xp_headshot", "0.25", "% bonus xp granted for headshot",
-            //     ConVarFlags.None);
-            // XpKnifeModifier =
-            //     new ConVar("wcgo_xp_knife", "0.50", "% bonus xp granted for knife", ConVarFlags.None);
-
             RegisterListener<Listeners.OnClientConnect>(OnClientPutInServerHandler);
-            RegisterListener<Listeners.OnMapStart>(OnMapStartHandler);
             RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnectHandler);
+            RegisterListener<Listeners.OnMapStart>(OnMapStartHandler);
 
             if (hotReload)
             {
@@ -191,25 +177,26 @@ namespace WCS
             _database.Initialize(ModuleDirectory);
         }
 
-        private void CommandAddXp(CCSPlayerController? client, CommandInfo commandinfo)
+        public override void Unload(bool hotReload)
         {
-            var wcPlayer = GetWcPlayer(client);
-
-            if (string.IsNullOrEmpty(commandinfo.ArgByIndex(1))) return;
-
-            var xpToAdd = Convert.ToInt32(commandinfo.ArgByIndex(1));
-
-            wcPlayer.GetRace().AddExperience(xpToAdd);
+            base.Unload(hotReload);
         }
 
-        private void CommandResetSkills(CCSPlayerController? client, CommandInfo commandinfo)
+        // CLIENT HANDLERS
+        private void OnClientPutInServerHandler(int slot, string name, string ipAddress)
         {
-            var wcPlayer = GetWcPlayer(client);
+            var player = new CCSPlayerController(NativeAPI.GetEntityFromIndex(slot + 1));
+            Console.WriteLine($"Put in server {player.Handle}");
+            // No bots, invalid clients or non-existent clients.
+            if (!player.IsValid || player.IsBot) return;
 
-            foreach (WarcraftSkill skill in wcPlayer.GetRace().GetSkills())
+            if (!_database.ClientExistsInDatabase(player.SteamID))
             {
-                skill.Level = 0;
+                _database.AddNewClientToDatabase(player);
+                Server.PrintToChatAll($"{ModuleChatPrefix}New player ({name}) just joined!");
             }
+
+            WarcraftPlayers[player.Handle] = _database.LoadClientFromDatabase(raceManager, player);
         }
 
         private void OnClientDisconnectHandler(int slot)
@@ -223,9 +210,10 @@ namespace WCS
             SetWcPlayer(player, null);
         }
 
+        // REPEATERS
         private void OnMapStartHandler(string mapName)
         {
-            AddTimer(2f, StatusUpdate, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
+            AddTimer(2f, PlayerInfoUpdate, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
             AddTimer(60.0f, _database.SaveClients, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
             AddTimer(120.0f, RunAdverts, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
 
@@ -252,7 +240,7 @@ namespace WCS
             if (AdvertIndex >= AdvertStrings.Length) AdvertIndex = 0;
         }
 
-        private void StatusUpdate()
+        private void PlayerInfoUpdate()
         {
             var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
             foreach (var player in playerEntities)
@@ -273,22 +261,28 @@ namespace WCS
             }
         }
 
-        private void OnClientPutInServerHandler(int slot, string name, string ipAddress)
+        // CLIENT COMMAND LISTENERS
+        private void CommandResetSkills(CCSPlayerController? client, CommandInfo commandinfo)
         {
-            var player = new CCSPlayerController(NativeAPI.GetEntityFromIndex(slot + 1));
-            Console.WriteLine($"Put in server {player.Handle}");
-            // No bots, invalid clients or non-existent clients.
-            if (!player.IsValid || player.IsBot) return;
+            var wcPlayer = GetWcPlayer(client);
 
-            if (!_database.ClientExistsInDatabase(player.SteamID))
+            foreach (WarcraftSkill skill in wcPlayer.GetRace().GetSkills())
             {
-                _database.AddNewClientToDatabase(player);
-                Server.PrintToChatAll($"{ModuleChatPrefix}New player ({name}) just joined!");
+                skill.Level = 0;
             }
-
-            WarcraftPlayers[player.Handle] = _database.LoadClientFromDatabase(raceManager, player);
         }
 
+        private void AbilityPressed(CCSPlayerController? client, CommandInfo commandinfo)
+        {
+            GetWcPlayer(client)?.GetRace()?.InvokeAbility(0);
+        }
+
+        private void UltimatePressed(CCSPlayerController? client, CommandInfo commandinfo)
+        {
+            GetWcPlayer(client)?.GetRace()?.InvokeAbility(1);
+        }
+
+        // MENUS
         private void CommandRaceInfo(CCSPlayerController? client, CommandInfo commandinfo)
         {
             var menu = new ChatMenu("Race Information");
@@ -338,21 +332,6 @@ namespace WCS
             }
 
             ChatMenus.OpenMenu(client, menu);
-        }
-
-        private void AbilityPressed(CCSPlayerController? client, CommandInfo commandinfo)
-        {
-            GetWcPlayer(client)?.GetRace()?.InvokeAbility(0);
-        }
-
-        private void UltimatePressed(CCSPlayerController? client, CommandInfo commandinfo)
-        {
-            GetWcPlayer(client)?.GetRace()?.InvokeAbility(1);
-        }
-
-        public override void Unload(bool hotReload)
-        {
-            base.Unload(hotReload);
         }
 
         public void ShowSkillPointMenu(WarcraftPlayer wcPlayer)

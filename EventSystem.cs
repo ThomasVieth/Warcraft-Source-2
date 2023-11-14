@@ -15,11 +15,8 @@
  */
 
 using System;
-using System.Drawing;
-using System.Numerics;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
 
 namespace WCS

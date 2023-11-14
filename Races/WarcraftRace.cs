@@ -16,11 +16,8 @@
 
 using System;
 using System.Collections.Generic;
-using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Events;
-using System.Reflection.Emit;
 using System.Linq;
-using System.ComponentModel;
 
 namespace WCS.Races
 {
