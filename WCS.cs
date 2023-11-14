@@ -54,6 +54,8 @@ namespace WCS
         {
             race = WCS.Instance.raceManager.InstantiateRace(dbRace.RaceName, this);
 
+            Controller.Clan = race.DisplayName;
+
             race.Level = dbRace.Level;
             race.Experience = dbRace.Xp;
 
