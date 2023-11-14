@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WCS": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
