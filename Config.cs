@@ -17,8 +17,8 @@ namespace WCS
     public class WarcraftConfigExperience
     {
         public int KillExperience;
-        public int HeadshotMultiplier;
-        public int KnifeMultiplier;
+        public float HeadshotMultiplier;
+        public float KnifeMultiplier;
         public int DifferencePerLevelAddition;
 
         public int BombPlantExperience;
