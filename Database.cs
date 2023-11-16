@@ -25,7 +25,7 @@ using WCS.Races;
 
 namespace WCS
 {
-    public class Database
+    public class WarcraftDatabase
     {
         private SqliteConnection _connection;
 
@@ -140,7 +140,6 @@ namespace WCS
 
             var wcPlayer = new WarcraftPlayer(player);
             wcPlayer.LoadFromDatabase(raceInformation, skillInformation.ToArray());
-            WCS.Instance.SetWcPlayer(player, wcPlayer);
 
             wcPlayer.IsReady = true;
 
@@ -222,7 +221,7 @@ namespace WCS
             {
                 if (!player.IsValid) continue;
                 
-                var wcPlayer = WCS.Instance.GetWcPlayer(player);
+                var wcPlayer = player.GetWarcraftPlayer();
                 if (wcPlayer == null) continue;
 
                 SaveClientToDatabase(wcPlayer);
@@ -231,7 +230,7 @@ namespace WCS
 
         public void SaveCurrentRace(CCSPlayerController player)
         {
-            var wcPlayer = WCS.Instance.GetWcPlayer(player);
+            var wcPlayer = player.GetWarcraftPlayer();
 
             _connection.Execute(@"
             UPDATE `players` SET `currentRace` = @currentRace, `name` = @name WHERE `steamid` = @steamid;",

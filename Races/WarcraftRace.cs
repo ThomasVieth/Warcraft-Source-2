@@ -99,12 +99,15 @@ namespace WCS.Races
         public void AddExperience(int experience)
         {
             int a = experience;
+            int l = Level;
             while (Experience + a > RequiredExperience)
             {
                 a -= RequiredExperience - Experience;
                 AddLevels(1);
                 Experience = 0;
             }
+
+            if (l < Level) WCS.Instance.ShowSkillPointMenu(Player);
 
             Experience += a;
             if (Experience > RequiredExperience)

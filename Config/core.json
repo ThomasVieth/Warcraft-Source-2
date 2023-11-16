@@ -1,0 +1,24 @@
+{
+  "chatprefix": "[WCS2]:",
+  "advertchatprefix": "[SERVER]:",
+
+  "defaultraceinternalname": "undead_scourge",
+
+  "admins": [ 76561198200706498, 76561198200706497 ],
+
+  "experience": {
+    "killexperience": 60,
+    "headshotmultiplier": 0.5,
+    "knifemultiplier": 1,
+    "differenceperleveladdition": 5,
+
+    "bombplantexperience": 40,
+    "bombexplodeexperience": 40,
+    "bombdefuseexperience": 80,
+
+    "roundwinexperience": 50,
+    "roundlossexperience": 0,
+
+    "assistexperience":  20
+  }
+}

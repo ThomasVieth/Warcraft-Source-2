@@ -76,37 +76,37 @@ namespace WCS
             {
                 var weaponName = attacker.PlayerPawn.Value.WeaponServices.ActiveWeapon.Value.DesignerName;
 
-                int xpToAdd = 0;
-                int xpHeadshot = 0;
-                int xpKnife = 0;
+                int experienceToAdd = 0;
+                int experienceHeadshot = 0;
+                int experienceKnife = 0;
 
-                xpToAdd = _plugin.XpPerKill;
+                experienceToAdd = _plugin.configuration.experience.KillExperience;
 
                 if (headshot)
-                    xpHeadshot = Convert.ToInt32(_plugin.XpPerKill * _plugin.XpHeadshotModifier);
+                    experienceHeadshot = Convert.ToInt32(experienceToAdd * _plugin.configuration.experience.HeadshotMultiplier);
 
                 if (weaponName == "weapon_knife")
-                    xpKnife = Convert.ToInt32(_plugin.XpPerKill * _plugin.XpKnifeModifier);
+                    experienceKnife = Convert.ToInt32(experienceToAdd * _plugin.configuration.experience.KnifeMultiplier);
 
-                xpToAdd += xpHeadshot + xpKnife;
+                experienceToAdd += experienceHeadshot + experienceKnife;
 
-                attacker.GetWarcraftPlayer()?.GetRace()?.AddExperience(xpToAdd);
+                attacker.GetWarcraftPlayer()?.GetRace()?.AddExperience(experienceToAdd);
 
                 string hsBonus = "";
-                if (xpHeadshot != 0)
+                if (experienceHeadshot != 0)
                 {
-                    hsBonus = $"(+{xpHeadshot} HS bonus)";
+                    hsBonus = $"(+{experienceHeadshot} HS bonus)";
                 }
 
                 string knifeBonus = "";
-                if (xpKnife != 0)
+                if (experienceKnife != 0)
                 {
-                    knifeBonus = $"(+{xpKnife} knife bonus)";
+                    knifeBonus = $"(+{experienceKnife} knife bonus)";
                 }
 
-                string xpString = $" {ChatColors.Gold}+{xpToAdd} XP {ChatColors.Default}for killing {ChatColors.Green}{victim.PlayerName} {ChatColors.Default}{hsBonus}{knifeBonus}";
+                string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for killing {ChatColors.Green}{victim.PlayerName} {ChatColors.Default}{hsBonus}{knifeBonus}";
 
-                _plugin.GetWcPlayer(attacker).SetStatusMessage(xpString);
+                attacker.GetWarcraftPlayer().SetStatusMessage(xpString);
                 attacker.PrintToChat(xpString);
             }
 
