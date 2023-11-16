@@ -18,6 +18,7 @@ using System;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
+using WCS.Races;
 
 namespace WCS
 {
@@ -46,11 +47,12 @@ namespace WCS
             CCSPlayerController player = @event.Userid;
 
             WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            WarcraftRace race = wcPlayer?.GetRace();
             int experienceToAdd = _plugin.configuration.experience.BombPlantExperience;
 
-            if (experienceToAdd > 0)
+            if (race != null && experienceToAdd > 0)
             {
-                wcPlayer.GetRace().AddExperience(experienceToAdd);
+                race.AddExperience(experienceToAdd);
                 string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for planting the bomb!";
                 player.PrintToChat(xpString);
             }
@@ -63,11 +65,12 @@ namespace WCS
             CCSPlayerController player = @event.Userid;
 
             WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            WarcraftRace race = wcPlayer?.GetRace();
             int experienceToAdd = _plugin.configuration.experience.BombDefuseExperience;
 
-            if (experienceToAdd > 0)
+            if (race != null && experienceToAdd > 0)
             {
-                wcPlayer.GetRace().AddExperience(experienceToAdd);
+                race.AddExperience(experienceToAdd);
                 string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for defusing the bomb!";
                 player.PrintToChat(xpString);
             }
@@ -80,11 +83,12 @@ namespace WCS
             CCSPlayerController player = @event.Userid;
 
             WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            WarcraftRace race = wcPlayer?.GetRace();
             int experienceToAdd = _plugin.configuration.experience.BombExplodeExperience;
 
-            if (experienceToAdd > 0)
+            if (race != null && experienceToAdd > 0)
             {
-                wcPlayer.GetRace().AddExperience(experienceToAdd);
+                race.AddExperience(experienceToAdd);
                 string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for the bomb exploding!";
                 player.PrintToChat(xpString);
             }
@@ -102,11 +106,12 @@ namespace WCS
                 if (player.TeamNum == winner)
                 {
                     WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+                    WarcraftRace race = wcPlayer?.GetRace();
                     int experienceToAdd = _plugin.configuration.experience.RoundWinExperience;
 
-                    if (experienceToAdd > 0)
+                    if (race != null && experienceToAdd > 0)
                     {
-                        wcPlayer.GetRace().AddExperience(experienceToAdd);
+                        race.AddExperience(experienceToAdd);
                         string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for winning the round!";
                         player.PrintToChat(xpString);
                     }
@@ -114,12 +119,13 @@ namespace WCS
                 else if (player.TeamNum == (5 - winner))
                 {
                     WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
-                    int experienceToAdd = _plugin.configuration.experience.RoundLossExperience;
+                    WarcraftRace race = wcPlayer?.GetRace();
+                    int experienceToAdd = _plugin.configuration.experience.RoundWinExperience;
 
-                    if (experienceToAdd > 0)
+                    if (race != null && experienceToAdd > 0)
                     {
-                        wcPlayer.GetRace().AddExperience(experienceToAdd);
-                        string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for winning the round!";
+                        race.AddExperience(experienceToAdd);
+                        string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for losing the round!";
                         player.PrintToChat(xpString);
                     }
                 }
@@ -133,6 +139,9 @@ namespace WCS
             var victim = @event.Userid;
             var attacker = @event.Attacker;
 
+            if (attacker.DesignerName != "cs_player_controller")
+                return HookResult.Continue;
+
             victim?.GetWarcraftPlayer()?.GetRace()?.InvokeEvent("player_hurt", @event);
             attacker?.GetWarcraftPlayer()?.GetRace()?.InvokeEvent("player_hurt_other", @event);
 
@@ -142,16 +151,19 @@ namespace WCS
         private HookResult PlayerSpawnHandler(EventPlayerSpawn @event, GameEventInfo _)
         {
             var player = @event.Userid;
-            var wcPlayer = player.GetWarcraftPlayer();
-            var race = wcPlayer?.GetRace();
-
-            if (race != null && wcPlayer.IsReady)
+            if (player.IsValid)
             {
-                var name = @event.EventName;
-                Server.NextFrame(() =>
+                var wcPlayer = player.GetWarcraftPlayer();
+                var race = wcPlayer?.GetRace();
+
+                if (race != null && wcPlayer.IsReady)
                 {
-                    race.InvokeEvent(name, @event);
-                });
+                    var name = @event.EventName;
+                    Server.NextFrame(() =>
+                    {
+                        race.InvokeEvent(name, @event);
+                    });
+                }
             }
 
             return HookResult.Handled;
@@ -163,7 +175,7 @@ namespace WCS
             var victim = @event.Userid;
             var headshot = @event.Headshot;
 
-            if (attacker.IsValid && victim.IsValid && (attacker.EntityIndex.Value.Value != victim.EntityIndex.Value.Value) && !attacker.IsBot)
+            if (attacker.IsValid && victim.IsValid && (attacker.EntityIndex.Value.Value != victim.EntityIndex.Value.Value))
             {
                 var weaponName = attacker.PlayerPawn.Value.WeaponServices.ActiveWeapon.Value.DesignerName;
 
@@ -197,7 +209,7 @@ namespace WCS
 
                 string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for killing {ChatColors.Green}{victim.PlayerName} {ChatColors.Default}{hsBonus}{knifeBonus}";
 
-                attacker.GetWarcraftPlayer().SetStatusMessage(xpString);
+                attacker.GetWarcraftPlayer()?.SetStatusMessage(xpString);
                 attacker.PrintToChat(xpString);
             }
 

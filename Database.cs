@@ -73,11 +73,11 @@ namespace WCS
             _connection.Execute(@"
             INSERT INTO players (`steamid`, `currentrace`)
 	        VALUES(@steamid, 'undead_scourge')",
-                new { steamid = player.SteamID });
+                new { steamid = player.GetSteamID() });
             _connection.Execute(@"
             INSERT INTO races (`steamid`, `racename`)
 	        VALUES(@steamid, 'undead_scourge')",
-                new { steamid = player.SteamID });
+                new { steamid = player.GetSteamID() });
             Server.PrintToConsole($"Adding new user ({player.PlayerName}) to database.");
         }
 
@@ -85,7 +85,7 @@ namespace WCS
         {
             var dbPlayer = _connection.QueryFirstOrDefault<DatabasePlayer>(@"
             SELECT * FROM `players` WHERE `steamid` = @steamid",
-                new { steamid = player.SteamID });
+                new { steamid = player.GetSteamID() });
 
             if (dbPlayer == null)
             {
@@ -95,7 +95,7 @@ namespace WCS
 
             var raceInformationExists = _connection.ExecuteScalar<int>(@"
             select count(*) from `races` where steamid = @steamid AND racename = @racename",
-                new { steamid = player.SteamID, racename = dbPlayer.CurrentRace }
+                new { steamid = player.GetSteamID(), racename = dbPlayer.CurrentRace }
             ) > 0;
 
             if (!raceInformationExists)
@@ -103,7 +103,7 @@ namespace WCS
                 _connection.Execute(@"
                 insert into `races` (steamid, racename)
                 values (@steamid, @racename);",
-                    new { steamid = player.SteamID, racename = dbPlayer.CurrentRace });
+                    new { steamid = player.GetSteamID(), racename = dbPlayer.CurrentRace });
                 string[] races = raceManager.GetAllRacesByName();
 
                 WarcraftRace race;
@@ -122,7 +122,7 @@ namespace WCS
                     _connection.Execute(@"INSERT INTO `skills` (steamid, racename, skillname) VALUES (@steamid, @racename, @skillname);",
                         new
                         {
-                            steamid = player.SteamID,
+                            steamid = player.GetSteamID(),
                             racename = race.InternalName,
                             skillname = skill.InternalName,
                         }
@@ -132,11 +132,11 @@ namespace WCS
 
             var raceInformation = _connection.QueryFirst<DatabaseRaceInformation>(@"
             SELECT * from `races` where `steamid` = @steamid AND `racename` = @racename",
-                new { steamid = player.SteamID, racename = dbPlayer.CurrentRace });
+                new { steamid = player.GetSteamID(), racename = dbPlayer.CurrentRace });
 
             var skillInformation = _connection.Query<DatabaseSkillInformation>(@"
             SELECT * from `skills` where `steamid` = @steamid AND `racename` = @racename",
-                new { steamid = player.SteamID, racename = dbPlayer.CurrentRace });
+                new { steamid = player.GetSteamID(), racename = dbPlayer.CurrentRace });
 
             var wcPlayer = new WarcraftPlayer(player);
             wcPlayer.LoadFromDatabase(raceInformation, skillInformation.ToArray());
@@ -154,7 +154,7 @@ namespace WCS
 
             var raceInformationExists = _connection.ExecuteScalar<int>(@"
             select count(*) from `races` where steamid = @steamid AND racename = @racename",
-                new { steamid = player.Controller.SteamID, racename = race.InternalName }
+                new { steamid = player.Controller.GetSteamID(), racename = race.InternalName }
             ) > 0;
 
             if (!raceInformationExists)
@@ -162,7 +162,7 @@ namespace WCS
                 _connection.Execute(@"
                 insert into `races` (steamid, racename)
                 values (@steamid, @racename);",
-                    new { steamid = player.Controller.SteamID, racename = race.InternalName }
+                    new { steamid = player.Controller.GetSteamID(), racename = race.InternalName }
                 );
 
                 foreach (WarcraftSkill skill in race.GetSkills())
@@ -170,7 +170,7 @@ namespace WCS
                     _connection.Execute(@"INSERT INTO `skills` (steamid, racename, skillname) VALUES (@steamid, @racename, @skillname);",
                         new
                         {
-                            steamid = player.Controller.SteamID,
+                            steamid = player.Controller.GetSteamID(),
                             racename = race.InternalName,
                             skillname = skill.InternalName,
                         }
@@ -183,7 +183,7 @@ namespace WCS
                 {
                     currentXp = race.Experience,
                     currentLevel = race.Level,
-                    steamid = player.Controller.SteamID,
+                    steamid = player.Controller.GetSteamID(),
                     racename = race.InternalName
                 }
             );
@@ -193,7 +193,7 @@ namespace WCS
                 _connection.Query<int>(@"INSERT OR REPLACE INTO `skills` (`steamid`, `racename`, `skillname`, `level`) VALUES (@steamid, @racename, @skillname, @currentLevel);",
                     new
                     {
-                        steamid = player.Controller.SteamID,
+                        steamid = player.Controller.GetSteamID(),
                         racename = race.InternalName,
                         skillname = skill.InternalName,
                         currentLevel = skill.Level,
@@ -207,7 +207,7 @@ namespace WCS
             int totallevel = _connection.ExecuteScalar<int>(@"SELECT SUM(currentlevel) FROM `races` WHERE `steamid` = @steamid;",
                 new
                 {
-                    steamid = player.SteamID,
+                    steamid = player.GetSteamID(),
                 }
             );
 
@@ -238,7 +238,7 @@ namespace WCS
                 {
                     currentRace = wcPlayer.GetRace().InternalName,
                     name = player.PlayerName,
-                    steamid = player.SteamID
+                    steamid = player.GetSteamID()
                 }
             );
         }

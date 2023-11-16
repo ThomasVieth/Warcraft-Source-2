@@ -33,7 +33,26 @@ namespace WCS
     {
         public static WarcraftPlayer GetWarcraftPlayer(this CCSPlayerController player)
         {
-            return WCS.Instance.WarcraftPlayers[player.Handle];
+            WarcraftPlayer wcPlayer = null;
+            WCS.Instance.WarcraftPlayers.TryGetValue(player.Handle, out wcPlayer);
+            if (wcPlayer == null)
+            {
+                if (!WCS.Instance.database.ClientExistsInDatabase(player.GetSteamID()))
+                {
+                    WCS.Instance.database.AddNewClientToDatabase(player);
+                }
+
+                WCS.Instance.WarcraftPlayers[player.Handle] = WCS.Instance.database.LoadClientFromDatabase(WCS.Instance.raceManager, player);
+            }
+            return wcPlayer;
+        }
+
+        public static ulong GetSteamID(this CCSPlayerController player)
+        {
+            ulong steamid = player.SteamID;
+            if (player.IsBot)
+                steamid = unchecked((uint)player.PlayerName.GetHashCode());
+            return steamid;
         }
     }
 
@@ -61,7 +80,12 @@ namespace WCS
         {
             race = WCS.Instance.raceManager.InstantiateRace(dbRace.RaceName, this);
 
-            Controller.Clan = $"[{race.DisplayName}]";
+            if (!Controller.IsBot)
+                Controller.Clan = $"[{race.DisplayName}]";
+            else
+            {
+                //NativeAPI.SetSchemaValueByName<string>(Controller.PlayerPawn.Value.Bot.Handle, 0, "CCSBot", "m_name", $"[{race.DisplayName}] {Controller.PlayerName}");
+            }
 
             race.Level = dbRace.Level;
             race.Experience = dbRace.Xp;
@@ -174,7 +198,7 @@ namespace WCS
 
             Admins = configuration.Admins;
 
-            ModuleChatPrefix = $" {ChatColors.Green}{configuration.ChatPrefix}: ";
+            ModuleChatPrefix = $" {ChatColors.Green}{configuration.ChatPrefix} ";
             AdvertStrings = new string[]{
                 $" {ChatColors.Green}{configuration.AdvertChatPrefix} {ChatColors.Default}This Server is running Warcraft Source 2!",
                 $" {ChatColors.Green}{configuration.AdvertChatPrefix} {ChatColors.Default}Bind {ChatColors.Gold}F1, F2, etc {ChatColors.Default}to {ChatColors.Gold}\"css_1\", \"css_2\", etc {ChatColors.Default}to use menus.",
@@ -194,9 +218,9 @@ namespace WCS
         {
             var player = new CCSPlayerController(NativeAPI.GetEntityFromIndex(slot + 1));
 
-            if (!player.IsValid || player.IsBot) return;
+            if (!player.IsValid) return;
 
-            if (!database.ClientExistsInDatabase(player.SteamID))
+            if (!database.ClientExistsInDatabase(player.GetSteamID()))
             {
                 database.AddNewClientToDatabase(player);
             }
@@ -208,7 +232,7 @@ namespace WCS
         {
             var player = new CCSPlayerController(NativeAPI.GetEntityFromIndex(slot + 1));
 
-            if (!player.IsValid || player.IsBot) return;
+            if (!player.IsValid) return;
 
             var wcPlayer = player.GetWarcraftPlayer();
             database.SaveClientToDatabase(wcPlayer);
@@ -284,12 +308,9 @@ namespace WCS
             menu.AddMenuOption("Reset Skills", (player, option) => CommandResetSkills(player, null), false);
             menu.AddMenuOption("Race Information", (player, option) => CommandRaceInfo(player, null), false);
             menu.AddMenuOption("Player Information", (player, option) => CommandPlayerInfo(player, null), false);
-            foreach (ulong steamid in Admins)
+            if (Admins.Contains<ulong>(client.GetSteamID()))
             {
-                if (client.SteamID == steamid)
-                {
-                    menu.AddMenuOption("Admin Panel", (player, option) => ShowAdminMenu(player, null), false);
-                }
+                menu.AddMenuOption("Admin Panel", (player, option) => ShowAdminMenu(player, null), false);
             }
 
             ChatMenus.OpenMenu(client, menu);
@@ -302,7 +323,6 @@ namespace WCS
             var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
             foreach (var target in playerEntities)
             {
-                if (target.IsBot) continue;
                 menu.AddMenuOption(
                     target.PlayerName,
                     (player, option) => {
@@ -317,10 +337,9 @@ namespace WCS
 
         private void ShowPlayerInfoMenu(CCSPlayerController? client, CCSPlayerController? target)
         {
-            var menu = new ChatMenu($"{ChatColors.Purple}{target.PlayerName}");
-            var race = target.GetWarcraftPlayer().GetRace();
+            client.PrintToChat($"{ChatColors.Green}{target.PlayerName}");
 
-            client.PrintToChat("--------");
+            var race = target.GetWarcraftPlayer().GetRace();
             int i = 0;
             foreach (WarcraftSkill skill in race.GetSkills())
             {
@@ -330,10 +349,6 @@ namespace WCS
 
                 i += 1;
             }
-
-            client.PrintToChat("--------");
-
-            ChatMenus.OpenMenu(client, menu);
         }
 
         private void CommandRaceInfo(CCSPlayerController? client, CommandInfo commandinfo)
@@ -411,7 +426,6 @@ namespace WCS
 
                     if (race.GetUnusedSkillPoints() > 0)
                     {
-                        //Server.NextFrame(() => ShowSkillPointMenu(wcPlayer));
                         ShowSkillPointMenu(wcPlayer);
                     }
                 }, disabled);
@@ -431,7 +445,7 @@ namespace WCS
 
         public void ShowAdminMenu(CCSPlayerController? player, CommandInfo? commandinfo)
         {
-            if (Admins.Contains<ulong>(player.SteamID))
+            if (!Admins.Contains<ulong>(player.GetSteamID()))
             {
                 player.PrintToChat($"{ModuleChatPrefix}{ChatColors.Red}You do not have access.");
                 return;
@@ -440,6 +454,7 @@ namespace WCS
             var menu = new ChatMenu($"WCS2 Admin Menu");
             menu.AddMenuOption("Give Experience", ShowAdminGiveExperienceMenu, false);
             menu.AddMenuOption("Give Levels", ShowAdminGiveLevelsMenu, false);
+            menu.AddMenuOption("Reset Level", ShowAdminResetLevelsMenu, false);
             menu.AddMenuOption("Change Race", ShowAdminChangeRaceMenu, false);
 
             ChatMenus.OpenMenu(player, menu);
@@ -499,8 +514,18 @@ namespace WCS
                     (player, option) => {
                         Tuple<IntPtr, AdminAction> tuple = AdminDataCache[player.Handle];
                         WarcraftPlayer target = WarcraftPlayers[tuple.Item1];
-                        //target.ChangeRace(race.InternalName);
-                        player.PrintToChat($"{ModuleChatPrefix}{ChatColors.Red}Currently unsupported.");
+                        database.SaveClientToDatabase(target);
+
+                        // Dont do anything if were already that race.
+                        if (race.InternalName == target.GetRace().InternalName) return;
+
+                        target.QuickChangeRace(race.InternalName);
+                        database.SaveCurrentRace(target.Controller);
+                        database.LoadClientFromDatabase(raceManager, target.Controller);
+
+                        target.Controller.PlayerPawn.Value.CommitSuicide(false, true);
+                        player.PrintToChat($"{ModuleChatPrefix}{ChatColors.Red}Changed {target.Controller.PlayerName} to {ChatColors.Green}{race.DisplayName}{ChatColors.Red}.");
+
                         AdminDataCache.Remove(player.Handle);
                     },
                     false
@@ -517,7 +542,6 @@ namespace WCS
             var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
             foreach (var target in playerEntities)
             {
-                if (target.IsBot) continue;
                 menu.AddMenuOption(
                     target.PlayerName,
                     (player, option) => {
@@ -538,12 +562,34 @@ namespace WCS
             var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
             foreach (var target in playerEntities)
             {
-                if (target.IsBot) continue;
                 menu.AddMenuOption(
                     target.PlayerName,
                     (player, option) => {
                         AdminDataCache[player.Handle] = new Tuple<IntPtr, AdminAction>(target.Handle, AdminAction.GiveLevels);
                         ShowNumericChoiceMenu(player);
+                    },
+                    false
+                );
+            }
+
+            ChatMenus.OpenMenu(player, menu);
+        }
+
+        public void ShowAdminResetLevelsMenu(CCSPlayerController? player, ChatMenuOption option)
+        {
+            var menu = new ChatMenu($"WCS2 Reset Level Menu");
+
+            var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
+            foreach (var target in playerEntities)
+            {
+                WarcraftRace race = target.GetWarcraftPlayer().GetRace();
+                menu.AddMenuOption(
+                    $"{target.PlayerName} (LV {race.Level}/{race.MaxLevel})",
+                    (player, option) => {
+                        CommandResetSkills(target, null);
+                        race.Level = 0;
+                        race.Experience = 0;
+                        player.PrintToChat($"{ModuleChatPrefix}{ChatColors.Red}You reset {target.PlayerName} to level 0 on {race.DisplayName}.");
                     },
                     false
                 );
@@ -559,7 +605,6 @@ namespace WCS
             var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
             foreach (var target in playerEntities)
             {
-                if (target.IsBot) continue;
                 menu.AddMenuOption(
                     target.PlayerName,
                     (player, option) => {

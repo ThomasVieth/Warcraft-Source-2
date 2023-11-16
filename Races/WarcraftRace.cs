@@ -107,7 +107,17 @@ namespace WCS.Races
                 Experience = 0;
             }
 
-            if (l < Level) WCS.Instance.ShowSkillPointMenu(Player);
+            if (l < Level)
+            {
+                if (!Player.Controller.IsBot)
+                    WCS.Instance.ShowSkillPointMenu(Player);
+                else
+                {
+                    WarcraftSkill availableSkill = GetSkills().FirstOrDefault<WarcraftSkill>((skill) => skill.Level < skill.MaxLevel, null);
+                    if (availableSkill != null)
+                        availableSkill.Level += 1;
+                }
+            }
 
             Experience += a;
             if (Experience > RequiredExperience)
