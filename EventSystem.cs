@@ -35,6 +35,97 @@ namespace WCS
             _plugin.RegisterEventHandler<EventPlayerDeath>(PlayerDeathHandler);
             _plugin.RegisterEventHandler<EventPlayerSpawn>(PlayerSpawnHandler);
             _plugin.RegisterEventHandler<EventPlayerHurt>(PlayerHurtHandler);
+            _plugin.RegisterEventHandler<EventBombPlanted>(BombPlantHandler);
+            _plugin.RegisterEventHandler<EventBombDefused>(BombDefuseHandler);
+            _plugin.RegisterEventHandler<EventBombExploded>(BombExplodeHandler);
+            _plugin.RegisterEventHandler<EventRoundEnd>(RoundEndHandler);
+        }
+
+        private HookResult BombPlantHandler(EventBombPlanted @event, GameEventInfo _)
+        {
+            CCSPlayerController player = @event.Userid;
+
+            WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            int experienceToAdd = _plugin.configuration.experience.BombPlantExperience;
+
+            if (experienceToAdd > 0)
+            {
+                wcPlayer.GetRace().AddExperience(experienceToAdd);
+                string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for planting the bomb!";
+                player.PrintToChat(xpString);
+            }
+
+            return HookResult.Continue;
+        }
+
+        private HookResult BombDefuseHandler(EventBombDefused @event, GameEventInfo _)
+        {
+            CCSPlayerController player = @event.Userid;
+
+            WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            int experienceToAdd = _plugin.configuration.experience.BombDefuseExperience;
+
+            if (experienceToAdd > 0)
+            {
+                wcPlayer.GetRace().AddExperience(experienceToAdd);
+                string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for defusing the bomb!";
+                player.PrintToChat(xpString);
+            }
+
+            return HookResult.Continue;
+        }
+
+        private HookResult BombExplodeHandler(EventBombExploded @event, GameEventInfo _)
+        {
+            CCSPlayerController player = @event.Userid;
+
+            WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            int experienceToAdd = _plugin.configuration.experience.BombExplodeExperience;
+
+            if (experienceToAdd > 0)
+            {
+                wcPlayer.GetRace().AddExperience(experienceToAdd);
+                string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for the bomb exploding!";
+                player.PrintToChat(xpString);
+            }
+
+            return HookResult.Continue;
+        }
+
+        private HookResult RoundEndHandler(EventRoundEnd @event, GameEventInfo _)
+        {
+            int winner = @event.Winner;
+
+            var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
+            foreach (CCSPlayerController player in playerEntities)
+            {
+                if (player.TeamNum == winner)
+                {
+                    WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+                    int experienceToAdd = _plugin.configuration.experience.RoundWinExperience;
+
+                    if (experienceToAdd > 0)
+                    {
+                        wcPlayer.GetRace().AddExperience(experienceToAdd);
+                        string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for winning the round!";
+                        player.PrintToChat(xpString);
+                    }
+                }
+                else if (player.TeamNum == (5 - winner))
+                {
+                    WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+                    int experienceToAdd = _plugin.configuration.experience.RoundLossExperience;
+
+                    if (experienceToAdd > 0)
+                    {
+                        wcPlayer.GetRace().AddExperience(experienceToAdd);
+                        string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for winning the round!";
+                        player.PrintToChat(xpString);
+                    }
+                }
+            }
+
+            return HookResult.Continue;
         }
 
         private HookResult PlayerHurtHandler(EventPlayerHurt @event, GameEventInfo _)
