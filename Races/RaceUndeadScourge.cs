@@ -73,7 +73,7 @@ namespace WCS.Races
     {
         public override string InternalName => "unholy_aura";
         public override string DisplayName => "Unholy Aura";
-        public override string Description => $"Move {ChatColors.Blue}10-80%{ChatColors.Default} faster.";
+        public override string Description => $"Move {ChatColors.Blue}20-60%{ChatColors.Default} faster.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
@@ -90,14 +90,13 @@ namespace WCS.Races
         {
             int unholyAuraLevel = Level;
             float speedModifier = 1.0f + (0.1f * unholyAuraLevel);
-            //float speed = NativeAPI.GetSchemaValueByName<float>(Player.Controller.Entity.Handle, (int)CounterStrikeSharp.API.Modules.Memory.DataType.DATA_TYPE_FLOAT, "CBaseEntity", "m_flSpeed");
             Player.Controller.PlayerPawn.Value.VelocityModifier = speedModifier;
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Speed {ChatColors.Default}increased to {ChatColors.Green}x{speedModifier}{ChatColors.Default}.");
         }
         private void PlayerHurt(GameEvent @event)
         {
             int unholyAuraLevel = Level;
-            float speedModifier = 1.0f + (0.1f * unholyAuraLevel);
+            float speedModifier = 1.2f + (0.05f * unholyAuraLevel);
             Player.Controller.PlayerPawn.Value.VelocityModifier = speedModifier;
         }
     }
