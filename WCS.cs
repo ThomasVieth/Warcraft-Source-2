@@ -340,6 +340,9 @@ namespace WCS
             client.PrintToChat($"{ChatColors.Green}{target.PlayerName}");
 
             var race = target.GetWarcraftPlayer().GetRace();
+
+            client.PrintToChat($"{ChatColors.Red}{race.DisplayName} ({race.Level}/{race.MaxLevel})");
+
             int i = 0;
             foreach (WarcraftSkill skill in race.GetSkills())
             {
@@ -422,7 +425,10 @@ namespace WCS
                     var wcPlayer = player.GetWarcraftPlayer();
 
                     if (race.GetUnusedSkillPoints() > 0)
+                    {
                         race.GetSkillByDisplayName(option.Text.Substring(0, skill.DisplayName.Length)).Level += 1;
+                        player.PrintToChat($"{ModuleChatPrefix} Increased {skill.DisplayName} to level {skill.Level}.");
+                    }
 
                     if (race.GetUnusedSkillPoints() > 0)
                     {
