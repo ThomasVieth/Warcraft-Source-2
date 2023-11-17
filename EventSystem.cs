@@ -120,7 +120,7 @@ namespace WCS
                 {
                     WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
                     WarcraftRace race = wcPlayer?.GetRace();
-                    int experienceToAdd = _plugin.configuration.experience.RoundWinExperience;
+                    int experienceToAdd = _plugin.configuration.experience.RoundLossExperience;
 
                     if (race != null && experienceToAdd > 0)
                     {
