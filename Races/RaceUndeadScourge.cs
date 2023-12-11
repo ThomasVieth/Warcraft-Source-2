@@ -22,6 +22,7 @@ using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
+using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 
 namespace WCS.Races
 {
@@ -117,7 +118,8 @@ namespace WCS.Races
             Player = player;
 
             HookEvent<EventPlayerSpawn>("player_spawn", PlayerSpawn);
-            HookEvent<EventPlayerHurt>("player_hurt", PlayerHurt);
+
+            HookVirtual("player_pre_hurt", PrePlayerHurt);
         }
 
         private void PlayerSpawn(GameEvent @event)
@@ -129,17 +131,15 @@ namespace WCS.Races
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Gravity {ChatColors.Default}decreased to {ChatColors.Green}{str}%{ChatColors.Default}.");
         }
 
-        private void PlayerHurt(GameEvent @event)
+        private void PrePlayerHurt(DynamicHook hookData)
         {
             bool onGround = Player.Controller.PlayerPawn.Value.OnGroundLastTick;
             if (!onGround)
             {
-                int dmg = @event.Get<int>("dmg_health");
-                if (dmg > 0)
-                {
-                    Player.Controller.PlayerPawn.Value.Health += (dmg / 2);
-                    Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Reduced {ChatColors.Default}damage taken to {ChatColors.Green}{dmg/2}{ChatColors.Default}.");
-                }
+                CTakeDamageInfo damageInfo = hookData.GetParam<CTakeDamageInfo>(1);
+                damageInfo.Damage *= 0.5f;
+                hookData.SetParam<CTakeDamageInfo>(1, damageInfo);
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Low gravity {ChatColors.Default}blocked {ChatColors.Green}incoming damage{ChatColors.Default}.");
             }
         }
     }
