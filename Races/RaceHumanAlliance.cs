@@ -73,7 +73,7 @@ namespace WCS.Races
     {
         public override string InternalName => "devotion_aura";
         public override string DisplayName => "Devotion Aura";
-        public override string Description => $"Gain {ChatColors.Blue}10-80{ChatColors.Default} extra health.";
+        public override string Description => $"Gain {ChatColors.Blue}15-120{ChatColors.Default} extra health.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
@@ -88,7 +88,7 @@ namespace WCS.Races
         private void PlayerSpawn(GameEvent @event)
         {
             int auraLevel = Level;
-            int healthAddition = 10 * auraLevel;
+            int healthAddition = 15 * auraLevel;
             Player.Controller.PlayerPawn.Value.Health += healthAddition;
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Health {ChatColors.Default}increased by {ChatColors.Green}{healthAddition} {ChatColors.Default}HP.");
 
@@ -100,7 +100,7 @@ namespace WCS.Races
     {
         public override string InternalName => "invisibility";
         public override string DisplayName => "Invisibility";
-        public override string Description => $"Experience {ChatColors.LightBlue}92-36%{ChatColors.Default} of gravity.";
+        public override string Description => $"Reduce visibility by {ChatColors.LightBlue}70-40%{ChatColors.Default}.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
