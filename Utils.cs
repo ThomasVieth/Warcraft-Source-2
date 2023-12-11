@@ -18,8 +18,7 @@ namespace WCS
 
         public void Initialize()
         {
-            CreateEntityByName = VirtualFunction.Create<string, IntPtr, IntPtr>(GameData.GetSignature("UTIL_CreateEntityByName"));
-            DispatchSpawn = VirtualFunction.Create<IntPtr, IntPtr, int>(GameData.GetSignature("DispatchSpawn"));
+
         }
     }
 }

@@ -133,7 +133,7 @@ namespace WCS
         public static WCS Instance => _instance;
 
         public override string ModuleName => "WarcraftSource2";
-        public override string ModuleVersion => "2.0.1";
+        public override string ModuleVersion => "2.1.0";
 
         public string ModuleChatPrefix;
 
@@ -200,7 +200,7 @@ namespace WCS
 
             ModuleChatPrefix = $" {ChatColors.Green}{configuration.ChatPrefix} ";
             AdvertStrings = new string[]{
-                $" {ChatColors.Green}{configuration.AdvertChatPrefix} {ChatColors.Default}This Server is running Warcraft Source 2!",
+                $" {ChatColors.Green}{configuration.AdvertChatPrefix} {ChatColors.Default}This Server is running Warcraft CS2!",
                 $" {ChatColors.Green}{configuration.AdvertChatPrefix} {ChatColors.Default}Bind {ChatColors.Gold}F1, F2, etc {ChatColors.Default}to {ChatColors.Gold}\"css_1\", \"css_2\", etc {ChatColors.Default}to use menus.",
                 $" {ChatColors.Green}{configuration.AdvertChatPrefix} {ChatColors.Default}Type {ChatColors.Gold}changerace {ChatColors.Default}in {ChatColors.Gold}the console {ChatColors.Default}to change your race.",
                 $" {ChatColors.Green}{configuration.AdvertChatPrefix} {ChatColors.Default}Type {ChatColors.Gold}spendskills {ChatColors.Default}in {ChatColors.Gold}the console {ChatColors.Default}to spend skill points.",
