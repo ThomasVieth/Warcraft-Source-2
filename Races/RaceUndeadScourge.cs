@@ -74,7 +74,7 @@ namespace WCS.Races
     {
         public override string InternalName => "unholy_aura";
         public override string DisplayName => "Unholy Aura";
-        public override string Description => $"Move {ChatColors.Blue}20-60%{ChatColors.Default} faster. Lower your HP to increase further.";
+        public override string Description => $"Move {ChatColors.Blue}8-64%{ChatColors.Default} faster. Lower your HP to increase further.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
@@ -90,7 +90,7 @@ namespace WCS.Races
         private void PlayerSpawn(GameEvent @event)
         {
             int unholyAuraLevel = Level;
-            float speedModifier = 1.0f + (0.1f * unholyAuraLevel);
+            float speedModifier = 1.0f + (0.08f * unholyAuraLevel);
             Player.Controller.PlayerPawn.Value.VelocityModifier = speedModifier;
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Speed {ChatColors.Default}increased to {ChatColors.Green}x{speedModifier}{ChatColors.Default}.");
         }
@@ -108,7 +108,7 @@ namespace WCS.Races
     {
         public override string InternalName => "levitation";
         public override string DisplayName => "Levitation";
-        public override string Description => $"Experience {ChatColors.LightBlue}92-36%{ChatColors.Default} of gravity. Half damage taken while in the air.";
+        public override string Description => $"Experience {ChatColors.LightBlue}93-46%{ChatColors.Default} of gravity. Half damage taken while in the air.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
@@ -125,7 +125,7 @@ namespace WCS.Races
         private void PlayerSpawn(GameEvent @event)
         {
             int levitationLevel = Level;
-            float levitationModifier = 1f - (levitationLevel * 0.08f);
+            float levitationModifier = 1f - (levitationLevel * 0.07f);
             Player.Controller.PlayerPawn.Value.GravityScale = levitationModifier;
             var str = (levitationModifier * 100).ToString("0.00");
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Gravity {ChatColors.Default}decreased to {ChatColors.Green}{str}%{ChatColors.Default}.");
