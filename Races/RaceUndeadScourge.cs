@@ -73,7 +73,7 @@ namespace WCS.Races
     {
         public override string InternalName => "unholy_aura";
         public override string DisplayName => "Unholy Aura";
-        public override string Description => $"Move {ChatColors.Blue}20-60%{ChatColors.Default} faster.";
+        public override string Description => $"Move {ChatColors.Blue}20-60%{ChatColors.Default} faster. Lower your HP to increase further.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
@@ -96,8 +96,10 @@ namespace WCS.Races
         private void PlayerHurt(GameEvent @event)
         {
             int unholyAuraLevel = Level;
-            float speedModifier = 1.2f + (0.05f * unholyAuraLevel);
-            Player.Controller.PlayerPawn.Value.VelocityModifier = speedModifier;
+            float healthModifier = Math.Max((float)Player.Controller.PlayerPawn.Value.Health / 100, 0.2f);
+            float speedModifier = 0.2f + (0.05f * unholyAuraLevel);
+            speedModifier *= Math.Max(healthModifier, 2.0f);
+            Player.Controller.PlayerPawn.Value.VelocityModifier = (1 + speedModifier);
         }
     }
 
@@ -105,7 +107,7 @@ namespace WCS.Races
     {
         public override string InternalName => "levitation";
         public override string DisplayName => "Levitation";
-        public override string Description => $"Experience {ChatColors.LightBlue}92-36%{ChatColors.Default} of gravity.";
+        public override string Description => $"Experience {ChatColors.LightBlue}92-36%{ChatColors.Default} of gravity. Half damage taken while in the air.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
@@ -115,6 +117,7 @@ namespace WCS.Races
             Player = player;
 
             HookEvent<EventPlayerSpawn>("player_spawn", PlayerSpawn);
+            HookEvent<EventPlayerHurt>("player_hurt", PlayerHurt);
         }
 
         private void PlayerSpawn(GameEvent @event)
@@ -124,6 +127,20 @@ namespace WCS.Races
             Player.Controller.PlayerPawn.Value.GravityScale = levitationModifier;
             var str = (levitationModifier * 100).ToString("0.00");
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Gravity {ChatColors.Default}decreased to {ChatColors.Green}{str}%{ChatColors.Default}.");
+        }
+
+        private void PlayerHurt(GameEvent @event)
+        {
+            bool onGround = Player.Controller.PlayerPawn.Value.OnGroundLastTick;
+            if (!onGround)
+            {
+                int dmg = @event.Get<int>("dmg_health");
+                if (dmg > 0)
+                {
+                    Player.Controller.PlayerPawn.Value.Health += (dmg / 2);
+                    Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Reduced {ChatColors.Default}damage taken to {ChatColors.Green}{dmg/2}{ChatColors.Default}.");
+                }
+            }
         }
     }
 
