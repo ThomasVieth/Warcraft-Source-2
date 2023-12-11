@@ -15,6 +15,7 @@
  */
 
 using System;
+using System.Reflection;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Memory;
@@ -47,11 +48,6 @@ namespace WCS
             VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
         }
 
-        public void Destroy()
-        {
-            VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Unhook(OnTakeDamage, HookMode.Pre);
-        }
-
         private HookResult OnTakeDamage(DynamicHook hookData)
         {
             CEntityInstance victimEnt = hookData.GetParam<CEntityInstance>(0);
@@ -63,6 +59,12 @@ namespace WCS
             }
 
             CCSPlayerPawn victimPawn = new CCSPlayerPawn(victimEnt.Handle);
+
+            if (victimPawn.Handle == 0 || victimPawn.Controller.Value.Handle == 0)
+            {
+                return HookResult.Continue;
+            }
+
             WarcraftPlayer victim = _plugin.WarcraftPlayers[victimPawn.Controller.Value.Handle];
 
             CBaseEntity attackerEnt = damageInfo.Attacker.Value;
@@ -78,7 +80,7 @@ namespace WCS
             attacker?.GetRace()?.InvokeVirtual("player_pre_hurt_other", hookData);
             victim?.GetRace()?.InvokeVirtual("player_pre_hurt", hookData);
 
-            return HookResult.Changed;
+            return HookResult.Continue;
         }
 
         private HookResult BombPlantHandler(EventBombPlanted @event, GameEventInfo _)

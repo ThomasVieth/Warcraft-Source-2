@@ -207,6 +207,11 @@ namespace WCS.Races
             {
                 _eventHandlers[eventName].Invoke(@event);
             }
+
+            foreach (WarcraftSkill skill in _skills.Values)
+            {
+                skill.InvokeEvent(eventName, @event);
+            }
         }
 
         public void InvokeAbility(int abilityIndex)
@@ -215,6 +220,11 @@ namespace WCS.Races
             {
                 _abilityHandlers[abilityIndex].Invoke();
             }
+
+            foreach (WarcraftSkill skill in _skills.Values)
+            {
+                skill.InvokeAbility(abilityIndex);
+            }
         }
 
         public void InvokeVirtual(string eventName, DynamicHook hookData)
@@ -222,6 +232,11 @@ namespace WCS.Races
             if (_virtualHandlers.ContainsKey(eventName))
             {
                 _virtualHandlers[eventName].Invoke(hookData);
+            }
+
+            foreach (WarcraftSkill skill in _skills.Values)
+            {
+                skill.InvokeVirtual(eventName, hookData);
             }
         }
     }

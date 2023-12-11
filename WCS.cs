@@ -210,8 +210,6 @@ namespace WCS
 
         public override void Unload(bool hotReload)
         {
-            eventSystem.Destroy();
-
             base.Unload(hotReload);           
         }
 
