@@ -17,7 +17,10 @@
 using System;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
+using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using CounterStrikeSharp.API.Modules.Utils;
+using Microsoft.Extensions.Logging;
 using WCS.Races;
 
 namespace WCS
@@ -40,6 +43,42 @@ namespace WCS
             _plugin.RegisterEventHandler<EventBombDefused>(BombDefuseHandler);
             _plugin.RegisterEventHandler<EventBombExploded>(BombExplodeHandler);
             _plugin.RegisterEventHandler<EventRoundEnd>(RoundEndHandler);
+
+            VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
+        }
+
+        public void Destroy()
+        {
+            VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Unhook(OnTakeDamage, HookMode.Pre);
+        }
+
+        private HookResult OnTakeDamage(DynamicHook hookData)
+        {
+            CEntityInstance victimEnt = hookData.GetParam<CEntityInstance>(0);
+            CTakeDamageInfo damageInfo = hookData.GetParam<CTakeDamageInfo>(1);
+
+            if (victimEnt.Handle == 0 || victimEnt.DesignerName == "worldent")
+            {
+                return HookResult.Continue;
+            }
+
+            CCSPlayerPawn victimPawn = new CCSPlayerPawn(victimEnt.Handle);
+            WarcraftPlayer victim = _plugin.WarcraftPlayers[victimPawn.Controller.Value.Handle];
+
+            CBaseEntity attackerEnt = damageInfo.Attacker.Value;
+            CCSPlayerController attackerController = attackerEnt.As<CCSPlayerController>();
+
+            if (attackerEnt.Handle == 0 || attackerEnt.DesignerName == "worldent")
+            {
+                return HookResult.Continue;
+            }
+
+            WarcraftPlayer attacker = attackerController.GetWarcraftPlayer();
+
+            attacker?.GetRace()?.InvokeVirtual("player_pre_hurt_other", hookData);
+            victim?.GetRace()?.InvokeVirtual("player_pre_hurt", hookData);
+
+            return HookResult.Changed;
         }
 
         private HookResult BombPlantHandler(EventBombPlanted @event, GameEventInfo _)

@@ -210,7 +210,9 @@ namespace WCS
 
         public override void Unload(bool hotReload)
         {
-            base.Unload(hotReload);
+            eventSystem.Destroy();
+
+            base.Unload(hotReload);           
         }
 
         // CLIENT HANDLERS

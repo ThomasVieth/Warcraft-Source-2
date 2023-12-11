@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using CounterStrikeSharp.API.Modules.Events;
 using System.Linq;
+using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 
 namespace WCS.Races
 {
@@ -46,16 +47,23 @@ namespace WCS.Races
 
         // EVENTS
         private Dictionary<string, Action<GameEvent>> _eventHandlers = new();
+        private Dictionary<string, Action<DynamicHook>> _virtualHandlers = new();
         private Dictionary<int, Action> _abilityHandlers = new Dictionary<int, Action>();
         protected void HookEvent<T>(string eventName, Action<GameEvent> handler) where T : GameEvent
         {
             _eventHandlers[eventName] = handler;
         }
 
+        protected void HookVirtual(string eventName, Action<DynamicHook> handler)
+        {
+            _virtualHandlers[eventName] = handler;
+        }
+
         protected void HookAbility(int abilityIndex, Action handler)
         {
             _abilityHandlers[abilityIndex] = handler;
         }
+
         public void InvokeEvent(string eventName, GameEvent @event)
         {
             if (_eventHandlers.ContainsKey(eventName))
@@ -63,11 +71,20 @@ namespace WCS.Races
                 _eventHandlers[eventName].Invoke(@event);
             }
         }
+
         public void InvokeAbility(int abilityIndex)
         {
             if (_abilityHandlers.ContainsKey(abilityIndex))
             {
                 _abilityHandlers[abilityIndex].Invoke();
+            }
+        }
+
+        public void InvokeVirtual(string eventName, DynamicHook hookData)
+        {
+            if (_virtualHandlers.ContainsKey(eventName))
+            {
+                _virtualHandlers[eventName].Invoke(hookData);
             }
         }
     }
@@ -167,37 +184,44 @@ namespace WCS.Races
 
         // EVENTS
         private Dictionary<string, Action<GameEvent>> _eventHandlers = new();
+        private Dictionary<string, Action<DynamicHook>> _virtualHandlers = new();
         private Dictionary<int, Action> _abilityHandlers = new Dictionary<int, Action>();
         protected void HookEvent<T>(string eventName, Action<GameEvent> handler) where T : GameEvent
         {
             _eventHandlers[eventName] = handler;
         }
+
+        protected void HookVirtual(string eventName, Action<DynamicHook> handler)
+        {
+            _virtualHandlers[eventName] = handler;
+        }
+
         protected void HookAbility(int abilityIndex, Action handler)
         {
             _abilityHandlers[abilityIndex] = handler;
         }
+
         public void InvokeEvent(string eventName, GameEvent @event)
         {
             if (_eventHandlers.ContainsKey(eventName))
             {
                 _eventHandlers[eventName].Invoke(@event);
             }
-
-            foreach (WarcraftSkill skill in _skills.Values)
-            {
-                skill.InvokeEvent(eventName, @event);
-            }
         }
+
         public void InvokeAbility(int abilityIndex)
         {
             if (_abilityHandlers.ContainsKey(abilityIndex))
             {
                 _abilityHandlers[abilityIndex].Invoke();
             }
+        }
 
-            foreach (WarcraftSkill skill in _skills.Values)
+        public void InvokeVirtual(string eventName, DynamicHook hookData)
+        {
+            if (_virtualHandlers.ContainsKey(eventName))
             {
-                skill.InvokeAbility(abilityIndex);
+                _virtualHandlers[eventName].Invoke(hookData);
             }
         }
     }
