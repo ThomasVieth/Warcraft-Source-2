@@ -1,0 +1,16 @@
+﻿HookVirtual:
+	player_pre_hurt
+	player_pre_hurt_other
+
+HookEvent:
+	player_spawn
+	player_death
+	player_hurt
+	player_hurt_other
+	player_kill
+
+HookAbility:
+	1
+	2
+	3
+	4
