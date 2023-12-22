@@ -25,6 +25,7 @@ using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using CounterStrikeSharp.API.Modules.Timers;
+using WCS.API;
 
 namespace WCS.Races
 {
@@ -37,7 +38,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -77,7 +78,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -121,7 +122,7 @@ namespace WCS.Races
         public Dictionary<IntPtr, List<string>> PlayerWeapons = new Dictionary<IntPtr, List<string>>();
         public Dictionary<IntPtr, Tuple<Vector, QAngle>> PlayerDeathLocations = new Dictionary<IntPtr, Tuple<Vector, QAngle>>();
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -186,7 +187,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
         }
@@ -200,7 +201,7 @@ namespace WCS.Races
 
         public override int MaxLevel => 32;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 

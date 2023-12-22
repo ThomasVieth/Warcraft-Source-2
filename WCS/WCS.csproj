@@ -16,7 +16,7 @@
     <Compile Remove="Races\RaceTemplate.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.120" />
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.130" />
     <PackageReference Include="Dapper" Version="2.0.78" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.2" />
@@ -28,6 +28,9 @@
   <ItemGroup>
     <Folder Include="Database\" />
     <Folder Include="Config\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WCS.API\WCS.API.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="CounterStrikeSharp.API">

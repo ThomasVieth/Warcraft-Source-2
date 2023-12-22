@@ -23,6 +23,7 @@ using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
+using WCS.API;
 
 namespace WCS.Races
 {
@@ -35,7 +36,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -79,7 +80,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -113,7 +114,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -152,7 +153,7 @@ namespace WCS.Races
 
         public override int MaxLevel => 32;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 

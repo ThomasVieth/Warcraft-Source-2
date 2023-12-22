@@ -26,14 +26,17 @@ using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using Newtonsoft.Json;
 using System.IO;
+using WCS.API;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace WCS
 {
     public static class WarcraftPlayerExtensions
     {
-        public static WarcraftPlayer GetWarcraftPlayer(this CCSPlayerController player)
+        public static IWarcraftPlayer GetWarcraftPlayer(this CCSPlayerController player)
         {
-            WarcraftPlayer wcPlayer = null;
+            IWarcraftPlayer wcPlayer = null;
             WCS.Instance.WarcraftPlayers.TryGetValue(player.Handle, out wcPlayer);
             if (wcPlayer == null)
             {
@@ -42,7 +45,7 @@ namespace WCS
                     WCS.Instance.database.AddNewClientToDatabase(player);
                 }
 
-                WCS.Instance.WarcraftPlayers[player.Handle] = WCS.Instance.database.LoadClientFromDatabase(WCS.Instance.raceManager, player);
+                WCS.Instance.WarcraftPlayers[player.Handle] = WCS.Instance.database.LoadClientFromDatabase(WCS.Instance._raceManager, player);
             }
             return wcPlayer;
         }
@@ -56,20 +59,26 @@ namespace WCS
         }
     }
 
-    public class WarcraftPlayer
+
+
+    public class WarcraftPlayer : IWarcraftPlayer
     {
-        public bool IsReady = false;
+        public bool IsReady { get; set; } = false;
 
         public CCSPlayerController Controller { get; init; }
 
-        public string statusMessage;
+        public string statusMessage { get; set; }
 
-        private WarcraftRace race;
+        private IWarcraftRace race;
 
         public WarcraftPlayer(CCSPlayerController player)
         {
             Controller = player;
             WCS.Instance.WarcraftPlayers[player.Handle] = this;
+        }
+        public void Tell(string message)
+        {
+            Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{message}");
         }
 
         public void delete()
@@ -78,7 +87,7 @@ namespace WCS
         }
         public void LoadFromDatabase(DatabaseRaceInformation dbRace, DatabaseSkillInformation[] dbSkills)
         {
-            race = WCS.Instance.raceManager.InstantiateRace(dbRace.RaceName, this);
+            race = WCS.Instance._raceManager.InstantiateRace(dbRace.RaceName, this);
 
             if (!Controller.IsBot)
                 Controller.Clan = $"[{race.DisplayName}]";
@@ -87,13 +96,16 @@ namespace WCS
                 //NativeAPI.SetSchemaValueByName<string>(Controller.PlayerPawn.Value.Bot.Handle, 0, "CCSBot", "m_name", $"[{race.DisplayName}] {Controller.PlayerName}");
             }
 
+
             race.Level = dbRace.Level;
             race.Experience = dbRace.Xp;
 
             foreach (DatabaseSkillInformation dbSkill in dbSkills)
             {
-                WarcraftSkill skill = race.GetSkillByName(dbSkill.SkillName);
+                WCS.Instance._logger.LogInformation($"Loading skill: {dbSkill.SkillName}");
+                WarcraftSkill skill = (WarcraftSkill)race.GetSkillByName(dbSkill.SkillName);
                 skill.Level = dbSkill.Level;
+                WCS.Instance._logger.LogInformation($"Skill loaded: {skill.InternalName} (Level {skill.Level})");
             }
         }
 
@@ -110,14 +122,14 @@ namespace WCS
             return $"{race.DisplayName}: LV {race.Level} | {race.Experience}/{race.RequiredExperience} XP";
         }
 
-        public WarcraftRace GetRace()
+        public IWarcraftRace GetRace()
         {
             return race;
         }
 
         public void QuickChangeRace(string raceName)
         {
-            race = WCS.Instance.raceManager.GetRace(raceName);
+            race = (WarcraftRace)WCS.Instance._raceManager.GetRace(raceName);
         }
 
         public void SetStatusMessage(string status, float duration = 2f)
@@ -127,13 +139,23 @@ namespace WCS
         }
     }
 
+
+    public class WCSServiceCollection : IPluginServiceCollection<WCS>
+    {
+        public void ConfigureServices(IServiceCollection serviceCollection)
+        {
+            serviceCollection.AddSingleton<IRaceManager, RaceManager>();
+        }
+    }
+
+
     public class WCS : BasePlugin
     {
         private static WCS _instance;
         public static WCS Instance => _instance;
 
         public override string ModuleName => "WarcraftSource2";
-        public override string ModuleVersion => "2.1.0";
+        public override string ModuleVersion => "2.2.0";
 
         public string ModuleChatPrefix;
 
@@ -144,13 +166,48 @@ namespace WCS
         private Dictionary<IntPtr, Tuple<IntPtr, AdminAction>> AdminDataCache = new();
         private int[] AdminNumberOptions = { 1, 5, 10, 20, 50, 100 };
 
-        public Dictionary<IntPtr, WarcraftPlayer> WarcraftPlayers = new();
+        public ILogger<WCS> _logger;
+
+        public Dictionary<IntPtr, IWarcraftPlayer> WarcraftPlayers = new();
         public EventSystem eventSystem;
         public Utils utilities;
-        public RaceManager raceManager;
         public WarcraftDatabase database;
         public WarcraftConfig configuration;
+        public IRaceManager _raceManager;
 
+        public WCS(ILogger<WCS> logger, IRaceManager raceManager)
+        {
+            _raceManager = raceManager;
+            _raceManager.wcs = this;
+            _logger = logger;
+        }
+
+
+        private void readConfig()
+        {
+            if (!Directory.Exists(Path.Join(ModuleDirectory, "Config")))
+            {
+                _logger.LogWarning("Config directory not found, creating one.");
+                Directory.CreateDirectory(Path.Join(ModuleDirectory, "Config"));
+            }
+
+            if (!File.Exists(Path.Join(ModuleDirectory, "Config", "core.json")))
+            {
+                using (StreamWriter writer = new StreamWriter(Path.Join(ModuleDirectory, "Config", "core.json")))
+                {
+                    _logger.LogWarning("Core config not found, creating one from default.");
+                    configuration = new WarcraftConfig();
+                    writer.Write(JsonConvert.SerializeObject(configuration, Formatting.Indented));
+                    return;
+                }
+            }
+
+            using (StreamReader reader = new StreamReader(Path.Join(ModuleDirectory, "Config", "core.json")))
+            {
+                string json = reader.ReadToEnd();
+                configuration = JsonConvert.DeserializeObject<WarcraftConfig>(json);
+            }
+        }
         // LOAD AND UNLOAD
         public override void Load(bool hotReload)
         {
@@ -160,8 +217,7 @@ namespace WCS
 
             database = new WarcraftDatabase();
 
-            raceManager = new RaceManager();
-            raceManager.Initialize();
+            _raceManager.Load();
 
             utilities = new Utils(this);
             utilities.Initialize();
@@ -190,11 +246,8 @@ namespace WCS
                 OnMapStartHandler(null);
             }
 
-            using (StreamReader reader = new StreamReader(Path.Join(ModuleDirectory, "Config", "core.json")))
-            {
-                string json = reader.ReadToEnd();
-                configuration = JsonConvert.DeserializeObject<WarcraftConfig>(json);
-            }
+
+            readConfig();
 
             Admins = configuration.Admins;
 
@@ -225,7 +278,7 @@ namespace WCS
                 database.AddNewClientToDatabase(player);
             }
 
-            WarcraftPlayers[player.Handle] = database.LoadClientFromDatabase(raceManager, player);
+            WarcraftPlayers[player.Handle] = database.LoadClientFromDatabase(_raceManager, player);
         }
 
         private void OnClientDisconnectHandler(int slot)
@@ -357,7 +410,7 @@ namespace WCS
         private void CommandRaceInfo(CCSPlayerController? client, CommandInfo commandinfo)
         {
             var menu = new ChatMenu("WCS2 Race Info");
-            var races = raceManager.GetAllRaces();
+            var races = _raceManager.GetAllRaces();
             foreach (var race in races.OrderBy(x => x.Requirement).ThenBy(x => x.DisplayName))
             {
                 menu.AddMenuOption(race.DisplayName, (player, option) =>
@@ -383,12 +436,12 @@ namespace WCS
         private void CommandChangeRace(CCSPlayerController? client, CommandInfo? commandinfo)
         {
             var menu = new ChatMenu("WCS2 Change Race");
-            var races = raceManager.GetAllRaces();
+            var races = _raceManager.GetAllRaces();
             foreach (var race in races.OrderBy(x => x.Requirement).ThenBy(x => x.DisplayName))
             {
                 menu.AddMenuOption(race.DisplayName, ((player, option) =>
                 {
-                    WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+                    IWarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
                     database.SaveClientToDatabase(wcPlayer);
 
                     // Dont do anything if were already that race.
@@ -396,7 +449,7 @@ namespace WCS
 
                     wcPlayer.QuickChangeRace(race.InternalName);
                     database.SaveCurrentRace(player);
-                    database.LoadClientFromDatabase(raceManager, player);
+                    database.LoadClientFromDatabase(_raceManager, player);
 
                     player.PlayerPawn.Value.CommitSuicide(false, true);
                 }));
@@ -405,7 +458,7 @@ namespace WCS
             ChatMenus.OpenMenu(client, menu);
         }
 
-        public void ShowSkillPointMenu(WarcraftPlayer wcPlayer)
+        public void ShowSkillPointMenu(IWarcraftPlayer wcPlayer)
         {
             var menu = new ChatMenu($"WCS2 Skills ({wcPlayer.GetRace().GetUnusedSkillPoints()} available)");
             var race = wcPlayer.GetRace();
@@ -476,7 +529,7 @@ namespace WCS
                     number.ToString(),
                     (player, option) => {
                         Tuple<IntPtr, AdminAction> tuple = AdminDataCache[player.Handle];
-                        WarcraftPlayer target;
+                        IWarcraftPlayer target;
                         int value;
                         try
                         {
@@ -513,13 +566,13 @@ namespace WCS
         {
             var menu = new ChatMenu($"WCS2 Change Race Menu");
 
-            foreach (WarcraftRace race in raceManager.GetAllRaces())
+            foreach (WarcraftRace race in _raceManager.GetAllRaces())
             {
                 menu.AddMenuOption(
                     race.DisplayName,
                     (player, option) => {
                         Tuple<IntPtr, AdminAction> tuple = AdminDataCache[player.Handle];
-                        WarcraftPlayer target = WarcraftPlayers[tuple.Item1];
+                        IWarcraftPlayer target = WarcraftPlayers[tuple.Item1];
                         database.SaveClientToDatabase(target);
 
                         // Dont do anything if were already that race.
@@ -527,7 +580,7 @@ namespace WCS
 
                         target.QuickChangeRace(race.InternalName);
                         database.SaveCurrentRace(target.Controller);
-                        database.LoadClientFromDatabase(raceManager, target.Controller);
+                        database.LoadClientFromDatabase(_raceManager, target.Controller);
 
                         target.Controller.PlayerPawn.Value.CommitSuicide(false, true);
                         player.PrintToChat($"{ModuleChatPrefix}{ChatColors.Red}Changed {target.Controller.PlayerName} to {ChatColors.Green}{race.DisplayName}{ChatColors.Red}.");
@@ -588,7 +641,7 @@ namespace WCS
             var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
             foreach (var target in playerEntities)
             {
-                WarcraftRace race = target.GetWarcraftPlayer().GetRace();
+                IWarcraftRace race = target.GetWarcraftPlayer().GetRace();
                 menu.AddMenuOption(
                     $"{target.PlayerName} (LV {race.Level}/{race.MaxLevel})",
                     (player, option) => {

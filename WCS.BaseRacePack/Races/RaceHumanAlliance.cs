@@ -13,20 +13,18 @@
  *  You should have received a copy of the GNU General Public License
  *  along with CounterStrikeSharp.  If not, see <https://www.gnu.org/licenses/>. *
  */
-
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Drawing;
-using System.Reflection.Metadata;
-using System.Linq;
+using WCS.API;
+using WCS.Races;
+using Timer = CounterStrikeSharp.API.Modules.Timers.Timer;
+using System;
+using System.Collections.Generic;
 
-namespace WCS.Races
+namespace WCS.BaseRacePack.Races
 {
     public class SkillBash : WarcraftSkill
     {
@@ -37,7 +35,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -78,7 +76,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -105,7 +103,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -132,7 +130,7 @@ namespace WCS.Races
 
         public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -196,7 +194,7 @@ namespace WCS.Races
 
         public override int MaxLevel => 32;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 

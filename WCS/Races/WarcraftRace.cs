@@ -19,22 +19,23 @@ using System.Collections.Generic;
 using CounterStrikeSharp.API.Modules.Events;
 using System.Linq;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
+using WCS.API;
 
 namespace WCS.Races
 {
-    public abstract class WarcraftSkill
+    public abstract class WarcraftSkill : IWarcraftSkill
     {
         // ATTRIBUTES
         public abstract string InternalName { get; }
         public abstract string DisplayName { get; }
         public abstract string Description { get; }
 
-        public int Level;
+        public int Level { get; set; }
 
         abstract public int MaxLevel { get; }
         abstract public int RequiredLevel { get; }
 
-        public WarcraftPlayer Player { get; set; }
+        public IWarcraftPlayer Player { get; set; }
 
         // CONSTRUCTOR
         public WarcraftSkill(int level = 0)
@@ -43,7 +44,7 @@ namespace WCS.Races
         }
 
         // LOADING
-        public abstract void Load(WarcraftPlayer player);
+        public abstract void Load(IWarcraftPlayer player);
 
         // EVENTS
         private Dictionary<string, Action<GameEvent>> _eventHandlers = new();
@@ -89,7 +90,7 @@ namespace WCS.Races
         }
     }
 
-    public abstract class WarcraftRace
+    public abstract class WarcraftRace : IWarcraftRace
     {
         // ATTRIBUTES
         public abstract string InternalName { get; }
@@ -97,19 +98,19 @@ namespace WCS.Races
         public abstract string Description { get; }
         public int Requirement => 0;
 
-        public int Level = 0;
-        public int Experience = 0;
+        public int Level { get; set; } = 0;
+        public int Experience { get; set; } = 0;
 
         abstract public int MaxLevel { get; }
 
         public bool IsMaxLevel => (Level == MaxLevel);
 
-        public WarcraftPlayer Player { get; set; }
+        public IWarcraftPlayer Player { get; set; }
 
-        private Dictionary<string, WarcraftSkill> _skills = new Dictionary<string, WarcraftSkill>();
+        private Dictionary<string, IWarcraftSkill> _skills = new Dictionary<string, IWarcraftSkill>();
 
         // LOADING
-        public abstract void Load(WarcraftPlayer player);
+        public abstract void Load(IWarcraftPlayer player);
 
         // EXPERIENCE
         public int RequiredExperience { get { return Level == MaxLevel ? 9999999 : 80 * (Level + 1); } }
@@ -130,7 +131,7 @@ namespace WCS.Races
                     WCS.Instance.ShowSkillPointMenu(Player);
                 else
                 {
-                    WarcraftSkill availableSkill = GetSkills().FirstOrDefault<WarcraftSkill>((skill) => skill.Level < skill.MaxLevel, null);
+                    IWarcraftSkill availableSkill = GetSkills().FirstOrDefault<IWarcraftSkill>((skill) => skill.Level < skill.MaxLevel, null);
                     if (availableSkill != null)
                         availableSkill.Level += 1;
                 }
@@ -155,15 +156,15 @@ namespace WCS.Races
         }
 
         // SKILL MANAGEMENT
-        public WarcraftSkill GetSkillByName(string name)
+        public IWarcraftSkill GetSkillByName(string name)
         {
             return _skills[name];
         }
-        public WarcraftSkill GetSkillByDisplayName(string name)
+        public IWarcraftSkill GetSkillByDisplayName(string name)
         {
             return _skills.Where(x => name.Equals(x.Value.DisplayName)).First().Value;
         }
-        public WarcraftSkill[] GetSkills()
+        public IWarcraftSkill[] GetSkills()
         {
             return _skills.Values.ToArray();
         }
@@ -171,7 +172,7 @@ namespace WCS.Races
         {
             return _skills.Values.Count;
         }
-        protected void AddSkill(WarcraftSkill skill)
+        protected void AddSkill(IWarcraftSkill skill)
         {
             skill.Load(Player);
             _skills.Add(skill.InternalName, skill);
@@ -208,7 +209,7 @@ namespace WCS.Races
                 _eventHandlers[eventName].Invoke(@event);
             }
 
-            foreach (WarcraftSkill skill in _skills.Values)
+            foreach (IWarcraftSkill skill in _skills.Values)
             {
                 skill.InvokeEvent(eventName, @event);
             }
@@ -221,7 +222,7 @@ namespace WCS.Races
                 _abilityHandlers[abilityIndex].Invoke();
             }
 
-            foreach (WarcraftSkill skill in _skills.Values)
+            foreach (IWarcraftSkill skill in _skills.Values)
             {
                 skill.InvokeAbility(abilityIndex);
             }
@@ -234,7 +235,7 @@ namespace WCS.Races
                 _virtualHandlers[eventName].Invoke(hookData);
             }
 
-            foreach (WarcraftSkill skill in _skills.Values)
+            foreach (IWarcraftSkill skill in _skills.Values)
             {
                 skill.InvokeVirtual(eventName, hookData);
             }

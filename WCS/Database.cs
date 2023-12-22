@@ -21,6 +21,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using Dapper;
 using Microsoft.Data.Sqlite;
+using WCS.API;
 using WCS.Races;
 
 namespace WCS
@@ -31,6 +32,11 @@ namespace WCS
 
         public void Initialize(string directory)
         {
+
+            if (!Directory.Exists(Path.Join(directory, "Database")))
+                Directory.CreateDirectory(Path.Join(directory, "Database"));
+
+
             _connection =
                 new SqliteConnection(
                     $"Data Source={Path.Join(directory, "Database", "players.db")}");
@@ -81,7 +87,7 @@ namespace WCS
             Server.PrintToConsole($"Adding new user ({player.PlayerName}) to database.");
         }
 
-        public WarcraftPlayer LoadClientFromDatabase(RaceManager raceManager, CCSPlayerController player)
+        public IWarcraftPlayer LoadClientFromDatabase(IRaceManager raceManager, CCSPlayerController player)
         {
             var dbPlayer = _connection.QueryFirstOrDefault<DatabasePlayer>(@"
             SELECT * FROM `players` WHERE `steamid` = @steamid",
@@ -106,7 +112,7 @@ namespace WCS
                     new { steamid = player.GetSteamID(), racename = dbPlayer.CurrentRace });
                 string[] races = raceManager.GetAllRacesByName();
 
-                WarcraftRace race;
+                IWarcraftRace race;
 
                 if (races.Contains(dbPlayer.CurrentRace))
                 {
@@ -146,11 +152,11 @@ namespace WCS
             return wcPlayer;
         }
 
-        public void SaveClientToDatabase(WarcraftPlayer player)
+        public void SaveClientToDatabase(IWarcraftPlayer player)
         {
             Server.PrintToConsole($"Saving {player.Controller.PlayerName} to database...");
 
-            WarcraftRace race = player.GetRace();
+            IWarcraftRace race = player.GetRace();
 
             var raceInformationExists = _connection.ExecuteScalar<int>(@"
             select count(*) from `races` where steamid = @steamid AND racename = @racename",
@@ -165,7 +171,7 @@ namespace WCS
                     new { steamid = player.Controller.GetSteamID(), racename = race.InternalName }
                 );
 
-                foreach (WarcraftSkill skill in race.GetSkills())
+                foreach (IWarcraftSkill skill in race.GetSkills())
                 {
                     _connection.Execute(@"INSERT INTO `skills` (steamid, racename, skillname) VALUES (@steamid, @racename, @skillname);",
                         new
@@ -242,28 +248,5 @@ namespace WCS
                 }
             );
         }
-    }
-
-    public class DatabasePlayer
-    {
-        public ulong SteamId { get; set; }
-        public string CurrentRace { get; set; }
-        public string Name { get; set; }
-    }
-
-    public class DatabaseRaceInformation
-    {
-        public ulong SteamId { get; set; }
-        public string RaceName { get; set; }
-        public int Xp { get; set; }
-        public int Level { get; set; }
-    }
-
-    public class DatabaseSkillInformation
-    {
-        public ulong SteamId { get; set; }
-        public string RaceName { get; set; }
-        public string SkillName { get; set; }
-        public int Level { get; set; }
     }
 }
