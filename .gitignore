@@ -32,6 +32,8 @@
 *.app
 
 
+**/*.csproj.user
+
 
 /bin/*
 /obj/*
