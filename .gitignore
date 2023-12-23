@@ -32,7 +32,7 @@
 *.app
 
 
-**/*.csproj.user
+*.csproj.user
 
 
 /bin/*
