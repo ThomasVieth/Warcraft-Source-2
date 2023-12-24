@@ -315,6 +315,15 @@ namespace WCS.Races
             AddSkill(new SkillCriticalGrenade());
             AddSkill(new SkillReincarnation());
             AddSkill(new SkillChainLightning());
+
+            HookEvent<EventPlayerSpawn>("player_spawn", PlayerSpawn);
+        }
+
+        private void PlayerSpawn(GameEvent @obj)
+        {
+            var @event = (EventPlayerSpawn) @obj;
+            var player = @event.Userid;
+            player.GiveNamedItem("weapon_hegrenade");
         }
     }
 }

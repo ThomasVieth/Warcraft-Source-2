@@ -176,15 +176,27 @@ namespace WCS.Races
 
             Player.Controller.PlayerPawn.Value.Teleport(origin, angle, currentDirection);
 
-            Cooldowns[Player.Controller.Handle] = 8;
-            new Timer(1.0f, () => { Cooldowns[Player.Controller.Handle] = 7; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(2.0f, () => { Cooldowns[Player.Controller.Handle] = 6; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(3.0f, () => { Cooldowns[Player.Controller.Handle] = 5; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(4.0f, () => { Cooldowns[Player.Controller.Handle] = 4; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(5.0f, () => { Cooldowns[Player.Controller.Handle] = 3; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(6.0f, () => { Cooldowns[Player.Controller.Handle] = 2; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(7.0f, () => { Cooldowns[Player.Controller.Handle] = 1; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(8.0f, () => { Cooldowns[Player.Controller.Handle] = 0; }, TimerFlags.STOP_ON_MAPCHANGE);
+            Cooldowns[Player.Controller.Handle] = 5;
+            new Timer(4.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 4;
+                Player.SetStatusMessage("Teleport on Cooldown for 4 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(5.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 3;
+                Player.SetStatusMessage("Teleport on Cooldown for 3 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(6.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 2;
+                Player.SetStatusMessage("Teleport on Cooldown for 2 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(7.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 1;
+                Player.SetStatusMessage("Teleport on Cooldown for 1 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(8.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 0;
+                Player.SetStatusMessage("Teleport no longer on Cooldown.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
         }
     }
 
