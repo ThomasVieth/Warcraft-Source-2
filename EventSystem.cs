@@ -67,13 +67,14 @@ namespace WCS
 
             WarcraftPlayer victim = _plugin.WarcraftPlayers[victimPawn.Controller.Value.Handle];
 
-            CBaseEntity attackerEnt = damageInfo.Attacker.Value;
-            CCSPlayerController attackerController = attackerEnt.As<CCSPlayerController>();
+            CCSPlayerPawn attackerPawn = new CCSPlayerPawn(damageInfo.Attacker.Value.Handle);
 
-            if (attackerEnt.Handle == 0 || attackerEnt.DesignerName == "worldent")
+            if (attackerPawn.Handle == 0 || attackerPawn.DesignerName == "worldent")
             {
                 return HookResult.Continue;
             }
+
+            CCSPlayerController attackerController = new CCSPlayerController(attackerPawn.Controller.Value.Handle);
 
             WarcraftPlayer attacker = attackerController.GetWarcraftPlayer();
 
