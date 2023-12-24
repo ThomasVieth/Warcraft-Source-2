@@ -29,6 +29,9 @@ namespace WCS.Races
         {
             RegisterRace<RaceUndeadScourge>();
             RegisterRace<RaceHumanAlliance>();
+            RegisterRace<RaceOrcishHorde>();
+            RegisterRace<RaceNightElf>();
+            RegisterRace<RaceBloodElfMage>();
         }
 
         private void RegisterRace<T>() where T : WarcraftRace, new()

@@ -204,13 +204,6 @@ namespace WCS.Races
             AddSkill(new SkillDevotionAura());
             AddSkill(new SkillBash());
             AddSkill(new SkillTeleport());
-
-            HookEvent<EventPlayerDeath>("player_death", PlayerDeath);
-        }
-
-        public void PlayerDeath(GameEvent @event)
-        {
-
         }
     }
 }

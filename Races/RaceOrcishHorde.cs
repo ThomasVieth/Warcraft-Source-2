@@ -25,6 +25,13 @@ using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using CounterStrikeSharp.API.Modules.Timers;
+using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Modules.Memory;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Drawing;
+
+using static WCS.Effects;
 
 namespace WCS.Races
 {
@@ -50,13 +57,10 @@ namespace WCS.Races
 
             int playerChance = 8 + (4 * Level);
             int chance = Convert.ToInt32(Random.Shared.NextSingle() * 100);
-            CTakeDamageInfo damageInfo = hookData.GetParam<CTakeDamageInfo>(1);
-
-            if (damageInfo.Inflictor.Value.DesignerName.Contains("grenade") || damageInfo.Inflictor.Value.DesignerName.Contains("projectile"))
-                return;
 
             if (chance < playerChance)
             {
+                CTakeDamageInfo damageInfo = hookData.GetParam<CTakeDamageInfo>(1);
                 damageInfo.Damage *= 2;
                 hookData.SetParam(1, damageInfo);
 
@@ -64,6 +68,15 @@ namespace WCS.Races
                 CCSPlayerPawn victimPawn = new CCSPlayerPawn(victimEnt.Handle);
 
                 Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Critical Strike {ChatColors.Default}on {ChatColors.Green}{victimPawn.Controller.Value.PlayerName}{ChatColors.Gold}!");
+
+                DrawLaserBetween(
+                    Player.Controller,
+                    Player.Controller.PlayerPawn.Value.WeaponServices.ActiveWeapon.Value.AbsOrigin,
+                    damageInfo.DamagePosition,
+                    Color.GreenYellow,
+                    0.25f,
+                    3
+                );
             }
         }
     }
@@ -86,26 +99,30 @@ namespace WCS.Races
 
         public void PrePlayerHurtOther(DynamicHook hookData)
         {
-            if (Level == 0) return;
+            if (Level == 0) {
+                return;
+            }
 
-            int playerChance = 8 + (4 * Level);
-            int chance = Convert.ToInt32(Random.Shared.NextSingle() * 100);
             CTakeDamageInfo damageInfo = hookData.GetParam<CTakeDamageInfo>(1);
 
             if (!damageInfo.Inflictor.Value.DesignerName.Contains("grenade") && !damageInfo.Inflictor.Value.DesignerName.Contains("projectile"))
-                return;
-
-            if (chance < playerChance)
             {
-                float modifier = 1.6f + (0.05f * Level);
-                damageInfo.Damage *= modifier;
-                hookData.SetParam(1, damageInfo);
-
-                CEntityInstance victimEnt = hookData.GetParam<CEntityInstance>(0);
-                CCSPlayerPawn victimPawn = new CCSPlayerPawn(victimEnt.Handle);
-
-                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Critical Grenade {ChatColors.Default}on {ChatColors.Green}{victimPawn.Controller.Value.PlayerName}{ChatColors.Gold}!");
+                return;
             }
+
+            float modifier = 1.6f + (0.05f * Level);
+            damageInfo.Damage *= modifier;
+
+            CEntityInstance victimEnt = hookData.GetParam<CEntityInstance>(0);
+            CCSPlayerPawn victimPawn = new CCSPlayerPawn(victimEnt.Handle);
+
+            hookData.SetParam<CTakeDamageInfo>(1, damageInfo);
+
+            Server.NextFrame(() =>
+                {
+                    Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Critical Grenade {ChatColors.Default}on {ChatColors.Green}{victimPawn.Controller.Value.PlayerName}{ChatColors.Gold}!");
+                }
+            );
         }
     }
 
@@ -119,11 +136,17 @@ namespace WCS.Races
         public override int RequiredLevel => 0;
 
         public Dictionary<IntPtr, List<string>> PlayerWeapons = new Dictionary<IntPtr, List<string>>();
-        public Dictionary<IntPtr, Tuple<Vector, QAngle>> PlayerDeathLocations = new Dictionary<IntPtr, Tuple<Vector, QAngle>>();
 
         public override void Load(WarcraftPlayer player)
         {
             Player = player;
+
+            if (player != null)
+            {
+                IntPtr identifier = player.Controller.Handle;
+
+                PlayerWeapons[identifier] = new List<string>();
+            }
 
             HookEvent<EventPlayerDeath>("player_death", PlayerDeath);
             HookVirtual("player_pre_hurt", PrePlayerHurt);
@@ -146,23 +169,28 @@ namespace WCS.Races
         {
             player.Respawn();
 
-            IntPtr identifier = player.PlayerPawn.Value.Handle;
+            IntPtr identifier = player.Handle;
+
+            new Timer(0.1f, () => { player.RemoveWeapons(); });
 
             foreach (string weapon in PlayerWeapons[identifier])
             {
-                player.GiveNamedItem(weapon);
+                new Timer(0.2f, () =>
+                    {
+                        player.GiveNamedItem(weapon);
+                    }
+                );
             }
 
-            Tuple<Vector, QAngle> teleportLocationAngles = PlayerDeathLocations[identifier];
-            new Timer(0.2f, () => { player.Teleport(teleportLocationAngles.Item1, teleportLocationAngles.Item2, new Vector()); }, TimerFlags.STOP_ON_MAPCHANGE);
+            PlayerWeapons[identifier] = new List<string>();
         }
 
         public void PrePlayerHurt(DynamicHook hookData)
         {
-            if (Level == 0) return;
-
             CEntityInstance victimEnt = hookData.GetParam<CEntityInstance>(0);
             CCSPlayerPawn victimPawn = new CCSPlayerPawn(victimEnt.Handle);
+
+            if (Level == 0 || PlayerWeapons[victimPawn.Controller.Value.Handle].Count() != 0) return;
 
             List<string> weapons = new List<string>();
 
@@ -171,9 +199,7 @@ namespace WCS.Races
                 weapons.Add(weapon.Value.DesignerName);
             });
 
-            PlayerWeapons[victimPawn.Handle] = weapons;
-            PlayerDeathLocations[victimPawn.Handle] = new Tuple<Vector, QAngle>(victimPawn.CBodyComponent.SceneNode.AbsOrigin, Player.Controller.PlayerPawn.Value.EyeAngles);
-
+            PlayerWeapons[victimPawn.Controller.Value.Handle] = weapons;
         }
     }
 
@@ -181,14 +207,95 @@ namespace WCS.Races
     {
         public override string InternalName => "chain_lightning";
         public override string DisplayName => "Chain Lightning";
-        public override string Description => $"Press ultimate to attack players around you for {ChatColors.LightBlue}30-70{ChatColors.Default} damage.";
+        public override string Description => $"Press ultimate to attack players within 300 units around you for {ChatColors.LightBlue}30-70{ChatColors.Default} damage.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
+        public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
+
         public override void Load(WarcraftPlayer player)
         {
             Player = player;
+
+            HookEvent<EventPlayerSpawn>("player_spawn", PlayerSpawn);
+
+            HookAbility(1, PlayerUltimate);
+        }
+
+        private void PlayerSpawn(GameEvent @event)
+        {
+            Cooldowns[Player.Controller.Handle] = 0;
+        }
+
+        private void PlayerUltimate()
+        {
+            if (Level < 1) return;
+            int cooldown = Cooldowns[Player.Controller.Handle];
+            if (cooldown != 0)
+            {
+                Player.Controller.PrintToCenterHtml($"<font color=#FFFFFF>Chain Lightning on Cooldown for {cooldown} seconds.</font>");
+                return;
+            }
+            Vector origin = Player.Controller.PlayerPawn.Value.CBodyComponent.SceneNode.AbsOrigin;
+            origin.Z += 5;
+
+            List<CCSPlayerController> targets = new List<CCSPlayerController>();
+            foreach (CCSPlayerController player in Utilities.GetPlayers())
+            {
+                if (player.Handle == Player.Controller.Handle)
+                    continue;
+
+                if (player.TeamNum == Player.Controller.TeamNum)
+                    continue;
+
+                float distance = (origin - player.PlayerPawn.Value.CBodyComponent.SceneNode.AbsOrigin).Length();
+                if (distance > 300)
+                    continue;
+
+                targets.Add(player);
+            }
+
+            foreach (CCSPlayerController ply in targets)
+            {
+                IntPtr ptr = Marshal.AllocHGlobal(0x98);
+                CTakeDamageInfo damageInfo = new CTakeDamageInfo(ptr);
+                nint attackerHandle = Schema.GetRef<nint>(damageInfo.Handle, "CTakeDamageInfo", "m_hAttacker");
+                attackerHandle = Player.Controller.PlayerPawn.Value.Handle;
+                damageInfo.DamageFlags = TakeDamageFlags_t.DFLAG_IGNORE_ARMOR;
+                damageInfo.Damage = 30 + (5 * Level);
+                VirtualFunctions.CBaseEntity_TakeDamageOld(ply.PlayerPawn.Value, damageInfo);
+                Marshal.FreeHGlobal(ptr);
+                DrawLaserBetween(
+                    Player.Controller,
+                    Player.Controller.PlayerPawn.Value.WeaponServices.ActiveWeapon.Value.AbsOrigin,
+                    ply.PlayerPawn.Value.AbsOrigin + new Vector(0, 0, 30),
+                    Color.Green,
+                    0.25f,
+                    3
+                );
+                if (ply.IsBot)
+                    Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Green}Chain Lightning {ChatColors.Red}attacked {ChatColors.Magenta}{ply.PlayerPawn.Value.Bot.Name}!");
+                else
+                    Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Green}Chain Lightning {ChatColors.Red}attacked {ChatColors.Magenta}{ply.PlayerName}!");
+            }
+
+            if (targets.Count() > 0)
+            {
+                Cooldowns[Player.Controller.Handle] = 8;
+                new Timer(1.0f, () => { Cooldowns[Player.Controller.Handle] = 7; }, TimerFlags.STOP_ON_MAPCHANGE);
+                new Timer(2.0f, () => { Cooldowns[Player.Controller.Handle] = 6; }, TimerFlags.STOP_ON_MAPCHANGE);
+                new Timer(3.0f, () => { Cooldowns[Player.Controller.Handle] = 5; }, TimerFlags.STOP_ON_MAPCHANGE);
+                new Timer(4.0f, () => { Cooldowns[Player.Controller.Handle] = 4; }, TimerFlags.STOP_ON_MAPCHANGE);
+                new Timer(5.0f, () => { Cooldowns[Player.Controller.Handle] = 3; }, TimerFlags.STOP_ON_MAPCHANGE);
+                new Timer(6.0f, () => { Cooldowns[Player.Controller.Handle] = 2; }, TimerFlags.STOP_ON_MAPCHANGE);
+                new Timer(7.0f, () => { Cooldowns[Player.Controller.Handle] = 1; }, TimerFlags.STOP_ON_MAPCHANGE);
+                new Timer(8.0f, () => { Cooldowns[Player.Controller.Handle] = 0; }, TimerFlags.STOP_ON_MAPCHANGE);
+            }
+            else
+            {
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Green}Chain Lightning {ChatColors.Default}hit no enemies!");
+            }
         }
     }
 
