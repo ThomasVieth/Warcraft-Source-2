@@ -20,17 +20,11 @@ using System.Threading.Tasks;
  *  along with CounterStrikeSharp.  If not, see <https://www.gnu.org/licenses/>. *
  */
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
-using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using CounterStrikeSharp.API;
-using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API.Modules.Timers;
 using WCS.API;
 

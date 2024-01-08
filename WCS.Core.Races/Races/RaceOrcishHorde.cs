@@ -28,7 +28,6 @@ using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Modules.Memory;
 using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
 using System.Drawing;
 
 using static WCS.API.Effects;

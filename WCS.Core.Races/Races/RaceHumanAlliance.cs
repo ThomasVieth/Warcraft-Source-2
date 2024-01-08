@@ -16,17 +16,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Drawing;
-using System.Reflection.Metadata;
-using System.Linq;
 using WCS.API;
-using static WCS.API.Effects;
 
 namespace WCS.Races
 {
