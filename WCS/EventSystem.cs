@@ -22,7 +22,6 @@ using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
-using WCS.API;
 using WCS.Races;
 
 namespace WCS
@@ -44,6 +43,7 @@ namespace WCS
             _plugin.RegisterEventHandler<EventBombPlanted>(BombPlantHandler);
             _plugin.RegisterEventHandler<EventBombDefused>(BombDefuseHandler);
             _plugin.RegisterEventHandler<EventBombExploded>(BombExplodeHandler);
+            _plugin.RegisterEventHandler<EventRoundStart>(RoundStartHandler);
             _plugin.RegisterEventHandler<EventRoundEnd>(RoundEndHandler);
 
             VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
@@ -66,17 +66,18 @@ namespace WCS
                 return HookResult.Continue;
             }
 
-            IWarcraftPlayer victim = _plugin.WarcraftPlayers[victimPawn.Controller.Value.Handle];
+            WarcraftPlayer victim = _plugin.WarcraftPlayers[victimPawn.Controller.Value.Handle];
 
-            CBaseEntity attackerEnt = damageInfo.Attacker.Value;
-            CCSPlayerController attackerController = attackerEnt.As<CCSPlayerController>();
+            CCSPlayerPawn attackerPawn = new CCSPlayerPawn(damageInfo.Attacker.Value.Handle);
 
-            if (attackerEnt.Handle == 0 || attackerEnt.DesignerName == "worldent")
+            if (attackerPawn.Handle == 0 || attackerPawn.DesignerName == "worldent")
             {
                 return HookResult.Continue;
             }
 
-            IWarcraftPlayer attacker = attackerController.GetWarcraftPlayer();
+            CCSPlayerController attackerController = new CCSPlayerController(attackerPawn.Controller.Value.Handle);
+
+            WarcraftPlayer attacker = attackerController.GetWarcraftPlayer();
 
             attacker?.GetRace()?.InvokeVirtual("player_pre_hurt_other", hookData);
             victim?.GetRace()?.InvokeVirtual("player_pre_hurt", hookData);
@@ -88,8 +89,8 @@ namespace WCS
         {
             CCSPlayerController player = @event.Userid;
 
-            IWarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
-            IWarcraftRace race = wcPlayer?.GetRace();
+            WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            WarcraftRace race = wcPlayer?.GetRace();
             int experienceToAdd = _plugin.configuration.experience.BombPlantExperience;
 
             if (race != null && experienceToAdd > 0)
@@ -106,8 +107,8 @@ namespace WCS
         {
             CCSPlayerController player = @event.Userid;
 
-            IWarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
-            IWarcraftRace race = wcPlayer?.GetRace();
+            WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            WarcraftRace race = wcPlayer?.GetRace();
             int experienceToAdd = _plugin.configuration.experience.BombDefuseExperience;
 
             if (race != null && experienceToAdd > 0)
@@ -124,8 +125,8 @@ namespace WCS
         {
             CCSPlayerController player = @event.Userid;
 
-            IWarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
-            IWarcraftRace race = wcPlayer?.GetRace();
+            WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+            WarcraftRace race = wcPlayer?.GetRace();
             int experienceToAdd = _plugin.configuration.experience.BombExplodeExperience;
 
             if (race != null && experienceToAdd > 0)
@@ -133,6 +134,19 @@ namespace WCS
                 race.AddExperience(experienceToAdd);
                 string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for the bomb exploding!";
                 player.PrintToChat(xpString);
+            }
+
+            return HookResult.Continue;
+        }
+
+        private HookResult RoundStartHandler(EventRoundStart @event, GameEventInfo _)
+        {
+            var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
+            foreach (CCSPlayerController player in playerEntities)
+            {
+                WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+                WarcraftRace race = wcPlayer?.GetRace();
+                race.InvokeEvent("round_start", @event);
             }
 
             return HookResult.Continue;
@@ -147,8 +161,8 @@ namespace WCS
             {
                 if (player.TeamNum == winner)
                 {
-                    IWarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
-                    IWarcraftRace race = wcPlayer?.GetRace();
+                    WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+                    WarcraftRace race = wcPlayer?.GetRace();
                     int experienceToAdd = _plugin.configuration.experience.RoundWinExperience;
 
                     if (race != null && experienceToAdd > 0)
@@ -160,8 +174,8 @@ namespace WCS
                 }
                 else if (player.TeamNum == (5 - winner))
                 {
-                    IWarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
-                    IWarcraftRace race = wcPlayer?.GetRace();
+                    WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+                    WarcraftRace race = wcPlayer?.GetRace();
                     int experienceToAdd = _plugin.configuration.experience.RoundLossExperience;
 
                     if (race != null && experienceToAdd > 0)

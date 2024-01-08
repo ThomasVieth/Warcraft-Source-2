@@ -61,11 +61,7 @@ namespace WCS.Races
                 origin.Z += 2;
                 victim.PlayerPawn.Value.Teleport(origin, angle, velocity);
 
-                EventShowSurvivalRespawnStatus eventShowSurvivalRespawnStatus = new EventShowSurvivalRespawnStatus(force: true);
-                eventShowSurvivalRespawnStatus.LocToken = $"<font color=#DD2222>You bashed {victim.PlayerName}!</font>";
-                eventShowSurvivalRespawnStatus.Duration = 50L;
-                eventShowSurvivalRespawnStatus.Userid = Player.Controller;
-                eventShowSurvivalRespawnStatus.FireEvent(dontBroadcast: false);
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}You {ChatColors.Default}bashed {ChatColors.Red}{victim.PlayerName}{ChatColors.Default}.");
             }
         }
     }
@@ -92,8 +88,6 @@ namespace WCS.Races
             int healthAddition = 15 * auraLevel;
             Player.Controller.PlayerPawn.Value.Health += healthAddition;
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Health {ChatColors.Default}increased by {ChatColors.Green}{healthAddition} {ChatColors.Default}HP.");
-
-            
         }
     }
 
@@ -177,15 +171,27 @@ namespace WCS.Races
 
             Player.Controller.PlayerPawn.Value.Teleport(origin, angle, currentDirection);
 
-            Cooldowns[Player.Controller.Handle] = 8;
-            new Timer(1.0f, () => { Cooldowns[Player.Controller.Handle] = 7; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(2.0f, () => { Cooldowns[Player.Controller.Handle] = 6; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(3.0f, () => { Cooldowns[Player.Controller.Handle] = 5; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(4.0f, () => { Cooldowns[Player.Controller.Handle] = 4; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(5.0f, () => { Cooldowns[Player.Controller.Handle] = 3; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(6.0f, () => { Cooldowns[Player.Controller.Handle] = 2; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(7.0f, () => { Cooldowns[Player.Controller.Handle] = 1; }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(8.0f, () => { Cooldowns[Player.Controller.Handle] = 0; }, TimerFlags.STOP_ON_MAPCHANGE);
+            Cooldowns[Player.Controller.Handle] = 5;
+            new Timer(1.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 4;
+                Player.SetStatusMessage("Teleport on Cooldown for 4 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(2.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 3;
+                Player.SetStatusMessage("Teleport on Cooldown for 3 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(3.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 2;
+                Player.SetStatusMessage("Teleport on Cooldown for 2 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(4.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 1;
+                Player.SetStatusMessage("Teleport on Cooldown for 1 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(5.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 0;
+                Player.SetStatusMessage("Teleport no longer on Cooldown.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
         }
     }
 
@@ -205,13 +211,6 @@ namespace WCS.Races
             AddSkill(new SkillDevotionAura());
             AddSkill(new SkillBash());
             AddSkill(new SkillTeleport());
-
-            HookEvent<EventPlayerDeath>("player_death", PlayerDeath);
-        }
-
-        public void PlayerDeath(GameEvent @event)
-        {
-
         }
     }
 }
