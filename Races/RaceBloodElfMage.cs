@@ -29,6 +29,9 @@ using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
+using CounterStrikeSharp.API;
+using Microsoft.Extensions.Logging;
+using CounterStrikeSharp.API.Modules.Timers;
 
 namespace WCS.Races
 {
@@ -41,9 +44,36 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
+        public Dictionary<IntPtr, bool> CanRespawnFlag = new Dictionary<IntPtr, bool>();
+
         public override void Load(WarcraftPlayer player)
         {
             Player = player;
+
+            CanRespawnFlag[Player.Controller.Handle] = false;
+
+            WCS.Instance.RegisterEventHandler<EventPlayerDeath>(OtherPlayerDeath, HookMode.Post);
+
+            HookEvent<EventRoundStart>("round_start", RoundStart);
+        }
+
+        private HookResult OtherPlayerDeath(EventPlayerDeath @event, GameEventInfo _)
+        {
+            bool canRespawn = CanRespawnFlag[Player.Controller.Handle];
+            if (canRespawn)
+            {
+                @event.Userid.Respawn();
+                @event.Userid.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}{Player.Controller.PlayerName} {ChatColors.Default}has {ChatColors.Green}respawned {ChatColors.Gold}you!");
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Default}have {ChatColors.Green}respawned {ChatColors.Gold}{@event.Userid.PlayerName}!");
+                CanRespawnFlag[Player.Controller.Handle] = false;
+            }
+
+            return HookResult.Continue;
+        }
+
+        private void RoundStart(GameEvent @obj)
+        {
+            CanRespawnFlag[Player.Controller.Handle] = true;
         }
     }
 
@@ -51,7 +81,7 @@ namespace WCS.Races
     {
         public override string InternalName => "arcane_brilliance";
         public override string DisplayName => "Arcane Brilliance";
-        public override string Description => $"Give your entire friendly team increased $ upon spawning.";
+        public override string Description => $"Give your entire friendly team increased $ upon round start.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
@@ -59,6 +89,22 @@ namespace WCS.Races
         public override void Load(WarcraftPlayer player)
         {
             Player = player;
+
+            HookEvent<EventRoundStart>("round_start", RoundStart);
+        }
+
+        private void RoundStart(GameEvent @obj)
+        {
+            var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
+            foreach (CCSPlayerController player in playerEntities)
+            {
+                if (Player.Controller.TeamNum == player.TeamNum)
+                {
+                    int moneyToAdd = 200 + (50 * Level);
+                    player.InGameMoneyServices.Account += moneyToAdd;
+                    player.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Default}were {ChatColors.Green}given {ChatColors.Gold}${moneyToAdd} {ChatColors.Default}by {ChatColors.Blue}{Player.Controller.PlayerName}.");
+                }
+            }
         }
     }
 
@@ -66,29 +112,182 @@ namespace WCS.Races
     {
         public override string InternalName => "ice_barrier";
         public override string DisplayName => "Ice Barrier";
-        public override string Description => $"Absorb 10 - 45 damage over 10 seconds. Ability.";
+        public override string Description => $"Absorb 10 - 50 damage with your barrier. Ability.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
+        public Dictionary<IntPtr, int> damageReduction = new Dictionary<IntPtr, int>();
+
+        public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
+
         public override void Load(WarcraftPlayer player)
         {
             Player = player;
+
+            damageReduction[Player.Controller.Handle] = 0;
+
+            HookAbility(0, PlayerAbilityExec);
+
+            HookVirtual("player_pre_hurt", PlayerPreHurt);
+        }
+
+        private void PlayerPreHurt(DynamicHook hookData)
+        {
+            int reduction = damageReduction[Player.Controller.Handle];
+
+            if (reduction > 0)
+            {
+                CTakeDamageInfo damageInfo = hookData.GetParam<CTakeDamageInfo>(1);
+                if (damageInfo.Damage > reduction)
+                {
+                    damageInfo.Damage -= reduction;
+                    Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}Your {ChatColors.Gold}Barrier {ChatColors.Default}has {ChatColors.Red}broken!");
+                }
+                else
+                {
+                    damageReduction[Player.Controller.Handle] -= Convert.ToInt32(damageInfo.Damage);
+                    damageInfo.Damage = 0;
+                }
+            }
+        }
+
+        private void PlayerAbilityExec()
+        {
+            int dmgRed = 10 + (5 * Level);
+            damageReduction[Player.Controller.Handle] = dmgRed;
+
+            Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Ice Barrier {ChatColors.Blue}({dmgRed} HP) {ChatColors.Default}has {ChatColors.Red}activated!");
+
+            Cooldowns[Player.Controller.Handle] = 10;
+            new Timer(1.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 9;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 9 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(2.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 8;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 8 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(3.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 7;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 7 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(4.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 6;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 6 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(5.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 5;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 5 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(6.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 4;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 4 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(7.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 3;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 3 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(8.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 2;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 2 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(9.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 1;
+                Player.SetStatusMessage("Ice Barrier on Cooldown for 1 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(10.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 0;
+                Player.SetStatusMessage("Ice Barrier no longer on Cooldown.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
         }
     }
 
     public class SkillCuringRitual : WarcraftSkill
     {
-        public override string InternalName => "levitation";
-        public override string DisplayName => "Levitation";
+        public override string InternalName => "curing_ritual";
+        public override string DisplayName => "Curing Ritual";
         public override string Description => $"Sacrifice $100 to heal yourself. Ultimate.";
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
+        public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
 
         public override void Load(WarcraftPlayer player)
         {
             Player = player;
+
+            HookEvent<EventPlayerSpawn>("player_spawn", PlayerSpawn);
+
+            HookAbility(1, PlayerUltimate);
+        }
+
+        private void PlayerSpawn(GameEvent @event)
+        {
+            Cooldowns[Player.Controller.Handle] = 0;
+        }
+
+        private void PlayerUltimate()
+        {
+            if (Level < 1) return;
+            int cooldown = Cooldowns[Player.Controller.Handle];
+            if (cooldown != 0)
+            {
+                Player.Controller.PrintToCenterHtml($"<font color=#FFFFFF>Curing Ritual on Cooldown for {cooldown} seconds.</font>");
+                return;
+            }
+
+            int cash = Player.Controller.InGameMoneyServices.Account;
+
+            if (cash >= 100)
+            {
+                int hpToAdd = 20 + (5 * Level);
+                Player.Controller.PlayerPawn.Value.Health += hpToAdd;
+                Player.Controller.InGameMoneyServices.Account -= 100;
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Green}healed {ChatColors.Gold}{hpToAdd}HP {ChatColors.Default}for {ChatColors.Green}$100.");
+            }
+
+            Cooldowns[Player.Controller.Handle] = 10;
+            new Timer(1.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 9;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 9 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(2.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 8;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 8 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(3.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 7;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 7 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(4.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 6;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 6 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(5.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 5;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 5 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(6.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 4;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 4 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(7.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 3;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 3 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(8.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 2;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 2 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(9.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 1;
+                Player.SetStatusMessage("Curing Ritual on Cooldown for 1 seconds.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
+            new Timer(10.0f, () => {
+                Cooldowns[Player.Controller.Handle] = 0;
+                Player.SetStatusMessage("Curing Ritual no longer on Cooldown.");
+            }, TimerFlags.STOP_ON_MAPCHANGE);
         }
     }
 

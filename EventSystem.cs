@@ -43,6 +43,7 @@ namespace WCS
             _plugin.RegisterEventHandler<EventBombPlanted>(BombPlantHandler);
             _plugin.RegisterEventHandler<EventBombDefused>(BombDefuseHandler);
             _plugin.RegisterEventHandler<EventBombExploded>(BombExplodeHandler);
+            _plugin.RegisterEventHandler<EventRoundStart>(RoundStartHandler);
             _plugin.RegisterEventHandler<EventRoundEnd>(RoundEndHandler);
 
             VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
@@ -133,6 +134,19 @@ namespace WCS
                 race.AddExperience(experienceToAdd);
                 string xpString = $" {ChatColors.Gold}+{experienceToAdd} XP {ChatColors.Default}for the bomb exploding!";
                 player.PrintToChat(xpString);
+            }
+
+            return HookResult.Continue;
+        }
+
+        private HookResult RoundStartHandler(EventRoundStart @event, GameEventInfo _)
+        {
+            var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
+            foreach (CCSPlayerController player in playerEntities)
+            {
+                WarcraftPlayer wcPlayer = player.GetWarcraftPlayer();
+                WarcraftRace race = wcPlayer?.GetRace();
+                race.InvokeEvent("round_start", @event);
             }
 
             return HookResult.Continue;
