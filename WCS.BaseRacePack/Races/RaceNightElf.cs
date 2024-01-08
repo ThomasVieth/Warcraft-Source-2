@@ -27,11 +27,11 @@ using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using System.Drawing;
 
-using WCS.API;
-using static WCS.Effects;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API;
 using System.Runtime.InteropServices;
+using WCS.API;
+using static WCS.API.Effects;
 
 namespace WCS.Races
 {

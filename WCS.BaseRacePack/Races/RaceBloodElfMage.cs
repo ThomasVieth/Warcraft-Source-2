@@ -33,9 +33,8 @@ using CounterStrikeSharp.API;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API.Modules.Timers;
 using WCS.API;
-using WCS.Races;
 
-namespace WCS.BaseRacePack.Races
+namespace WCS.Races
 {
     public class SkillPhoenix : WarcraftSkill
     {
@@ -52,7 +51,7 @@ namespace WCS.BaseRacePack.Races
         {
             Player = player;
 
-            CanRespawnFlag[Player.Controller.Handle] = false;
+            if (Player != null) CanRespawnFlag[Player.Controller.Handle] = false;
 
             WCS.Instance.RegisterEventHandler<EventPlayerDeath>(OtherPlayerDeath, HookMode.Post);
 
@@ -127,7 +126,7 @@ namespace WCS.BaseRacePack.Races
         {
             Player = player;
 
-            damageReduction[Player.Controller.Handle] = 0;
+            if (Player != null) damageReduction[Player.Controller.Handle] = 0;
 
             HookAbility(0, PlayerAbilityExec);
 

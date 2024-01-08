@@ -13,15 +13,22 @@
  *  You should have received a copy of the GNU General Public License
  *  along with CounterStrikeSharp.  If not, see <https://www.gnu.org/licenses/>. *
  */
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Memory;
+using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
-using WCS.API;
-using WCS.Races;
-using System;
+using System.Drawing;
 
-namespace WCS.BaseRacePack.Races
+using static WCS.API.Effects;
+using WCS.API;
+
+namespace WCS.Races
 {
     public class SkillVampiricAura : WarcraftSkill
     {
@@ -62,7 +69,15 @@ namespace WCS.BaseRacePack.Races
             if (victim != null & !string.IsNullOrEmpty(victim.PlayerName) && amountToHeal > 0)
             {
                 Player.SetStatusMessage($"{ChatColors.Green}+{amountToHeal} HP");
-                Player.Tell($"{ChatColors.Red}Leeched {ChatColors.Green}{amountToHeal} HP{ChatColors.Default}.");
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Red}Leeched {ChatColors.Green}{amountToHeal} HP{ChatColors.Default}.");
+                DrawLaserBetween(
+                    attacker,
+                    attacker.PlayerPawn.Value.WeaponServices.ActiveWeapon.Value.AbsOrigin,
+                    victim.PlayerPawn.Value.AbsOrigin + new Vector(0, 0, 30),
+                    Color.DarkRed,
+                    0.25f,
+                    3
+                );
             }
         }
     }
@@ -89,7 +104,7 @@ namespace WCS.BaseRacePack.Races
             int unholyAuraLevel = Level;
             float speedModifier = 1.0f + (0.08f * unholyAuraLevel);
             Player.Controller.PlayerPawn.Value.VelocityModifier = speedModifier;
-            Player.Tell($"{ChatColors.Gold}Speed {ChatColors.Default}increased to {ChatColors.Green}x{speedModifier}{ChatColors.Default}.");
+            Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Speed {ChatColors.Default}increased to {ChatColors.Green}x{speedModifier}{ChatColors.Default}.");
         }
         private void PlayerHurt(GameEvent @event)
         {
@@ -125,7 +140,7 @@ namespace WCS.BaseRacePack.Races
             float levitationModifier = 1f - (levitationLevel * 0.07f);
             Player.Controller.PlayerPawn.Value.GravityScale = levitationModifier;
             var str = (levitationModifier * 100).ToString("0.00");
-            Player.Tell($"{ChatColors.Gold}Gravity {ChatColors.Default}decreased to {ChatColors.Green}{str}%{ChatColors.Default}.");
+            Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Gravity {ChatColors.Default}decreased to {ChatColors.Green}{str}%{ChatColors.Default}.");
         }
 
         private void PrePlayerHurt(DynamicHook hookData)
@@ -136,7 +151,7 @@ namespace WCS.BaseRacePack.Races
                 CTakeDamageInfo damageInfo = hookData.GetParam<CTakeDamageInfo>(1);
                 damageInfo.Damage *= 0.5f;
                 hookData.SetParam<CTakeDamageInfo>(1, damageInfo);
-                Player.Tell($"{ChatColors.Gold}Low gravity {ChatColors.Default}blocked {ChatColors.Green}incoming damage{ChatColors.Default}.");
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Low gravity {ChatColors.Default}blocked {ChatColors.Green}incoming damage{ChatColors.Default}.");
             }
         }
     }

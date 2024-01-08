@@ -14,6 +14,7 @@
  *  along with CounterStrikeSharp.  If not, see <https://www.gnu.org/licenses/>. *
  */
 
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core.Logging;
 using CounterStrikeSharp.API.Core.Plugin;
 using McMaster.NETCore.Plugins;
@@ -48,7 +49,7 @@ namespace WCS.Races
         {
             if (State == PluginState.Loaded)
             {
-                _logger.LogInformation("RaceManager already loaded");
+                Server.PrintToConsole($"[WCS] RaceManager already loaded");
                 return;
             }
             var wcsDir = wcs.ModuleDirectory;
@@ -71,7 +72,7 @@ namespace WCS.Races
             {
                 if (File.Exists(racePackAssembly))
                 {
-                    _logger.LogInformation($"Collected RacePack: {Path.GetFileName(racePackAssembly)}");
+                    Server.PrintToConsole($"[WCS] Collected RacePack: {Path.GetFileName(racePackAssembly)}");
                     var context = AssemblyLoadContext.GetLoadContext(typeof(IWarcraftRace).Assembly);
                     context.LoadFromAssemblyPath(racePackAssembly);
                     var loader = PluginLoader.CreateFromAssemblyFile(
@@ -118,7 +119,7 @@ namespace WCS.Races
             var raceTypes = racePackAssembly.GetTypes().Where(t => typeof(IWarcraftRace).IsAssignableFrom(t)).ToArray();
             foreach (var raceType in raceTypes)
             {
-                _logger.LogInformation($"Loading Race: {raceType.Name} from {metadata.name} ({metadata.Uuid})");
+                Server.PrintToConsole($"[WCS] Loading Race: {raceType.Name} from {metadata.name} ({metadata.Uuid})");
                 var _RegisterRace = typeof(IRaceManager).GetMethod("RegisterRace");
                 _RegisterRace.MakeGenericMethod(raceType).Invoke(this, null);
             }
