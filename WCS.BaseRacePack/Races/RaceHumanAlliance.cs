@@ -25,6 +25,8 @@ using CounterStrikeSharp.API.Modules.Utils;
 using System.Drawing;
 using System.Reflection.Metadata;
 using System.Linq;
+using WCS.API;
+using static WCS.API.Effects;
 
 namespace WCS.Races
 {
@@ -37,7 +39,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -74,7 +76,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -99,7 +101,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -126,7 +128,7 @@ namespace WCS.Races
 
         public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -202,7 +204,7 @@ namespace WCS.Races
 
         public override int MaxLevel => 32;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 

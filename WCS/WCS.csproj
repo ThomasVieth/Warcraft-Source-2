@@ -30,6 +30,9 @@
     <Folder Include="Config\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\WCS.API\WCS.API.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="CounterStrikeSharp.API">
       <HintPath>..\..\managed\CounterStrikeSharp.API\bin\Debug\net7.0\CounterStrikeSharp.API.dll</HintPath>
     </Reference>

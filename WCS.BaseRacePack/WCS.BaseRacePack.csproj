@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Races\RaceTemplate.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <ProjectReference Include="..\WCS.API\WCS.API.csproj">
+		  <Private>false</Private>
+	  </ProjectReference>
+	  <ProjectReference Include="..\WCS\WCS.csproj">
+		  <Private>false</Private>
+	  </ProjectReference>
+  </ItemGroup>
+
+</Project>

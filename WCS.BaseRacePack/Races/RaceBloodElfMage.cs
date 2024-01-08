@@ -32,6 +32,7 @@ using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using CounterStrikeSharp.API;
 using Microsoft.Extensions.Logging;
 using CounterStrikeSharp.API.Modules.Timers;
+using WCS.API;
 
 namespace WCS.Races
 {
@@ -46,11 +47,11 @@ namespace WCS.Races
 
         public Dictionary<IntPtr, bool> CanRespawnFlag = new Dictionary<IntPtr, bool>();
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
-            CanRespawnFlag[Player.Controller.Handle] = false;
+            if (Player != null) CanRespawnFlag[Player.Controller.Handle] = false;
 
             WCS.Instance.RegisterEventHandler<EventPlayerDeath>(OtherPlayerDeath, HookMode.Post);
 
@@ -86,7 +87,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -121,11 +122,11 @@ namespace WCS.Races
 
         public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
-            damageReduction[Player.Controller.Handle] = 0;
+            if (Player != null) damageReduction[Player.Controller.Handle] = 0;
 
             HookAbility(0, PlayerAbilityExec);
 
@@ -213,7 +214,7 @@ namespace WCS.Races
         public override int RequiredLevel => 0;
         public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -299,7 +300,7 @@ namespace WCS.Races
 
         public override int MaxLevel => 32;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 

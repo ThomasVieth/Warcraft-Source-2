@@ -31,6 +31,14 @@
 *.out
 *.app
 
+
+*.csproj.user
+
+
 /bin/*
 /obj/*
 /.vs/*
+
+**/bin/*
+**/obj/*
+**/.vs/*

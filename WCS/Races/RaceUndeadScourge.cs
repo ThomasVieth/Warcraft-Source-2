@@ -23,9 +23,7 @@ using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Events;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
-using System.Drawing;
-
-using static WCS.Effects;
+using WCS.API;
 
 namespace WCS.Races
 {
@@ -38,7 +36,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -69,14 +67,6 @@ namespace WCS.Races
             {
                 Player.SetStatusMessage($"{ChatColors.Green}+{amountToHeal} HP");
                 Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Red}Leeched {ChatColors.Green}{amountToHeal} HP{ChatColors.Default}.");
-                DrawLaserBetween(
-                    attacker,
-                    attacker.PlayerPawn.Value.WeaponServices.ActiveWeapon.Value.AbsOrigin,
-                    victim.PlayerPawn.Value.AbsOrigin + new Vector(0, 0, 30),
-                    Color.DarkRed,
-                    0.25f,
-                    3
-                );
             }
         }
     }
@@ -90,7 +80,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -124,7 +114,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -163,7 +153,7 @@ namespace WCS.Races
 
         public override int MaxLevel => 32;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 

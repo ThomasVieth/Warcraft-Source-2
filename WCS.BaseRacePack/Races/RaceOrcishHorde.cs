@@ -31,7 +31,8 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Drawing;
 
-using static WCS.Effects;
+using static WCS.API.Effects;
+using WCS.API;
 
 namespace WCS.Races
 {
@@ -44,7 +45,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -90,7 +91,7 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -99,7 +100,8 @@ namespace WCS.Races
 
         public void PrePlayerHurtOther(DynamicHook hookData)
         {
-            if (Level == 0) {
+            if (Level == 0)
+            {
                 return;
             }
 
@@ -119,9 +121,9 @@ namespace WCS.Races
             hookData.SetParam<CTakeDamageInfo>(1, damageInfo);
 
             Server.NextFrame(() =>
-                {
-                    Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Critical Grenade {ChatColors.Default}on {ChatColors.Green}{victimPawn.Controller.Value.PlayerName}{ChatColors.Gold}!");
-                }
+            {
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Critical Grenade {ChatColors.Default}on {ChatColors.Green}{victimPawn.Controller.Value.PlayerName}{ChatColors.Gold}!");
+            }
             );
         }
     }
@@ -137,7 +139,7 @@ namespace WCS.Races
 
         public Dictionary<IntPtr, List<string>> PlayerWeapons = new Dictionary<IntPtr, List<string>>();
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -176,9 +178,9 @@ namespace WCS.Races
             foreach (string weapon in PlayerWeapons[identifier])
             {
                 new Timer(0.2f, () =>
-                    {
-                        player.GiveNamedItem(weapon);
-                    }
+                {
+                    player.GiveNamedItem(weapon);
+                }
                 );
             }
 
@@ -214,7 +216,7 @@ namespace WCS.Races
 
         public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -307,7 +309,7 @@ namespace WCS.Races
 
         public override int MaxLevel => 32;
 
-        public override void Load(WarcraftPlayer player)
+        public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
@@ -321,7 +323,7 @@ namespace WCS.Races
 
         private void PlayerSpawn(GameEvent @obj)
         {
-            var @event = (EventPlayerSpawn) @obj;
+            var @event = (EventPlayerSpawn)@obj;
             var player = @event.Userid;
             player.GiveNamedItem("weapon_hegrenade");
         }
