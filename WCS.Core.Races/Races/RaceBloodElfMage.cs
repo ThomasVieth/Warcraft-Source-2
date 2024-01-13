@@ -55,9 +55,10 @@ namespace WCS.Races
         private HookResult OtherPlayerDeath(EventPlayerDeath @event, GameEventInfo _)
         {
             bool canRespawn = CanRespawnFlag[Player.Controller.Handle];
-            if (canRespawn)
+            CCSPlayerController target = @event.Userid;
+            if (canRespawn && target.TeamNum == Player.Controller.TeamNum)
             {
-                @event.Userid.Respawn();
+                Timer _t = new Timer(1.0f, @event.Userid.Respawn, TimerFlags.STOP_ON_MAPCHANGE);
                 @event.Userid.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}{Player.Controller.PlayerName} {ChatColors.Default}has {ChatColors.Green}respawned {ChatColors.Gold}you!");
                 Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Default}have {ChatColors.Green}respawned {ChatColors.Gold}{@event.Userid.PlayerName}!");
                 CanRespawnFlag[Player.Controller.Handle] = false;
