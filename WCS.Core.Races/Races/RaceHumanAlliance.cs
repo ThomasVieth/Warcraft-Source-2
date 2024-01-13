@@ -207,6 +207,14 @@ namespace WCS.Races
             AddSkill(new SkillDevotionAura());
             AddSkill(new SkillBash());
             AddSkill(new SkillTeleport());
+
+            HookEvent<EventPlayerDeath>("player_death", OnPlayerDeath);
+        }
+
+        public void OnPlayerDeath(GameEvent @event)
+        {
+            Player.Controller.PlayerPawn.Value.RenderMode = RenderMode_t.kRenderTransColor;
+            Player.Controller.PlayerPawn.Value.Render = Color.FromArgb(255, Player.Controller.PlayerPawn.Value.Render.R, Player.Controller.PlayerPawn.Value.Render.G, Player.Controller.PlayerPawn.Value.Render.B);
         }
     }
 }
