@@ -447,11 +447,11 @@ namespace WCS
                     // Dont do anything if were already that race.
                     if (race.InternalName == wcPlayer.GetRace().InternalName) return;
 
+                    player.PlayerPawn.Value.CommitSuicide(false, true);
+
                     wcPlayer.QuickChangeRace(race.InternalName);
                     database.SaveCurrentRace(player);
                     database.LoadClientFromDatabase(_raceManager, player);
-
-                    player.PlayerPawn.Value.CommitSuicide(false, true);
                 }));
             }
 
@@ -578,11 +578,12 @@ namespace WCS
                         // Dont do anything if were already that race.
                         if (race.InternalName == target.GetRace().InternalName) return;
 
+                        target.Controller.PlayerPawn.Value.CommitSuicide(false, true);
+
                         target.QuickChangeRace(race.InternalName);
                         database.SaveCurrentRace(target.Controller);
                         database.LoadClientFromDatabase(_raceManager, target.Controller);
 
-                        target.Controller.PlayerPawn.Value.CommitSuicide(false, true);
                         player.PrintToChat($"{ModuleChatPrefix}{ChatColors.Red}Changed {target.Controller.PlayerName} to {ChatColors.Green}{race.DisplayName}{ChatColors.Red}.");
 
                         AdminDataCache.Remove(player.Handle);
