@@ -229,7 +229,7 @@ namespace WCS
             eventSystem = new EventSystem(this);
             eventSystem.Initialize();
 
-            restrictions = new Restrictions();
+            restrictions = new Restrictions(this);
             restrictions.Initialize(hotReload);
 
             database.Initialize(ModuleDirectory);

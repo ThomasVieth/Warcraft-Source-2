@@ -1,4 +1,5 @@
-﻿using CounterStrikeSharp.API.Core;
+﻿using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using System;
 using System.Collections.Generic;
@@ -7,9 +8,9 @@ namespace WCS
 {
     public class Restrictions
     {
-        private Dictionary<IntPtr, List<string>> Players = new Dictionary<IntPtr, List<string>>();
+        private static Dictionary<IntPtr, List<string>> Players = new Dictionary<IntPtr, List<string>>();
 
-        public List<string> ALL_WEAPONS = new List<string> {
+        public static List<string> ALL_WEAPONS = new List<string> {
             "weapon_ak47",
             "weapon_aug",
             "weapon_awp",
@@ -56,6 +57,21 @@ namespace WCS
             "weapon_usp_silencer",
             "weapon_xm1014"
         };
+
+        private static WCS _plugin = null;
+
+        public Restrictions()
+        {
+            if (_plugin == null)
+            {
+                Server.PrintToConsole($"{WCS.Instance.ModuleChatPrefix} Something went wrong loading Restriction System.");
+            }
+        }
+
+        public Restrictions(WCS plugin)
+        {
+            _plugin = plugin;
+        }
 
         public void Initialize(bool hotLoad)
         {
