@@ -6,7 +6,7 @@
 
 ## Installation
 1. Download and set up the required dependencies.
-2. Get the latest DLLs Zip from the [releases page](https://github.com/Vassili-Dev/Warcraft-Source-2/releases/)
+2. Get the latest DLLs Zip from the [releases page](https://github.com/ThomasVieth/Warcraft-Source-2/releases/tag/2.3.0)
 3. Extract the contents of the zip to your server's `csgo/addons/counterstrikesharp/plugins` folder.
 4. (Optional) Add any race packs to `csgo/addons/counterstrikesharp/WCS/RacePacks` (Race pack folder name must be the same as the `.dll` file name)
 5. Get Playing!
