@@ -222,15 +222,38 @@ namespace WCS
 
         public void SaveClients()
         {
-            var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
-            foreach (var player in playerEntities)
+            if (_connection.State != System.Data.ConnectionState.Open)
             {
-                if (!player.IsValid) continue;
-                
-                var wcPlayer = player.GetWarcraftPlayer();
-                if (wcPlayer == null) continue;
+                _connection.Open();
+            }
 
-                SaveClientToDatabase(wcPlayer);
+            SqliteTransaction transaction = _connection.BeginTransaction();
+
+            try
+            {
+                var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
+                foreach (var player in playerEntities)
+                {
+                    if (!player.IsValid) continue;
+
+                    var wcPlayer = player.GetWarcraftPlayer();
+                    if (wcPlayer == null) continue;
+
+                    SaveClientToDatabase(wcPlayer);
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+            }
+            finally
+            {
+                if (_connection.State == System.Data.ConnectionState.Open)
+                {
+                    _connection.Close();
+                }
             }
         }
 
