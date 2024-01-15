@@ -54,6 +54,7 @@ namespace WCS.Races
 
         private HookResult OtherPlayerDeath(EventPlayerDeath @event, GameEventInfo _)
         {
+            if (Player == null) return HookResult.Continue;
             bool canRespawn = CanRespawnFlag[Player.Controller.Handle];
             CCSPlayerController target = @event.Userid;
             if (canRespawn && target.TeamNum == Player.Controller.TeamNum)
@@ -94,7 +95,7 @@ namespace WCS.Races
             var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
             foreach (CCSPlayerController player in playerEntities)
             {
-                if (Player.Controller.TeamNum == player.TeamNum)
+                if (Player != null && Player.Controller.TeamNum == player.TeamNum)
                 {
                     int moneyToAdd = 200 + (50 * Level);
                     player.InGameMoneyServices.Account += moneyToAdd;
