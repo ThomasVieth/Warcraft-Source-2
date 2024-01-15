@@ -105,6 +105,39 @@ namespace WCS.Races
         }
     }
 
+    public class SkillSiphonMana : WarcraftSkill
+    {
+        public override string InternalName => "siphon_mana";
+        public override string DisplayName => "Siphon Mana";
+        public override string Description => $"Steal cash from enemies that you attack. 10-30%.";
+
+        public override int MaxLevel => 8;
+        public override int RequiredLevel => 0;
+
+        public override void Load(IWarcraftPlayer player)
+        {
+            Player = player;
+
+            HookEvent<EventPlayerHurt>("player_hurt_other", PlayerHurtOther);
+        }
+
+        private void PlayerHurtOther(GameEvent @obj)
+        {
+            var @event = (EventPlayerHurt)obj;
+            var victim = @event.Userid;
+
+            int chance = Convert.ToInt32(Random.Shared.NextSingle() * 100);
+            int playerChance = Convert.ToInt32(10 + (2.5 * Level));
+            if (chance < playerChance && victim.InGameMoneyServices.Account >= 200)
+            {
+                victim.InGameMoneyServices.Account -= 200;
+                Player.Controller.InGameMoneyServices.Account += 200;
+                if (victim.IsBot) Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Red}stole {ChatColors.Gold}$200 {ChatColors.Default}from {ChatColors.Red}{victim.PlayerPawn.Value.Bot.Name}!");
+                else Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Red}stole {ChatColors.Gold}$200 {ChatColors.Default}from {ChatColors.Red}{victim.PlayerName}!");
+            }
+        }
+    }
+
     public class SkillIceBarrier : WarcraftSkill
     {
         public override string InternalName => "ice_barrier";
@@ -294,7 +327,7 @@ namespace WCS.Races
         public override string DisplayName => "Blood Elf Mage";
         public override string Description => "Blood Elf Mage";
 
-        public override int MaxLevel => 32;
+        public override int MaxLevel => 40;
 
         public override void Load(IWarcraftPlayer player)
         {
@@ -302,6 +335,7 @@ namespace WCS.Races
 
             AddSkill(new SkillPhoenix());
             AddSkill(new SkillArcaneBrilliance());
+            AddSkill(new SkillSiphonMana());
             AddSkill(new SkillIceBarrier());
             AddSkill(new SkillCuringRitual());
         }
