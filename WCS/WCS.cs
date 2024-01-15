@@ -171,6 +171,7 @@ namespace WCS
         public Cooldowns cooldownSystem;
         public EventSystem eventSystem;
         public Utils utilities;
+        public Restrictions restrictions;
         public WarcraftDatabase database;
         public WarcraftConfig configuration;
         public IRaceManager _raceManager;
@@ -227,6 +228,9 @@ namespace WCS
 
             eventSystem = new EventSystem(this);
             eventSystem.Initialize();
+
+            restrictions = new Restrictions();
+            restrictions.Initialize(hotReload);
 
             database.Initialize(ModuleDirectory);
 
