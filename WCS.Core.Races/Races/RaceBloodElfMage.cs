@@ -149,17 +149,32 @@ namespace WCS.Races
 
         public Dictionary<IntPtr, int> damageReduction = new Dictionary<IntPtr, int>();
 
-        public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
+        public Cooldowns cooldowns = new Cooldowns();
 
         public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
-            if (Player != null) damageReduction[Player.Controller.Handle] = 0;
+            if (player != null)
+            {
+                damageReduction[Player.Controller.Handle] = 0;
+                cooldowns.SetCooldown(player.Controller, "ice_barrier", 0);
+                cooldowns.AddCooldownExtension(player.Controller, "ice_barrier", OnCooldownChange);
+            }
 
             HookAbility(0, PlayerAbilityExec);
 
             HookVirtual("player_pre_hurt", PlayerPreHurt);
+        }
+
+        public void OnCooldownChange(float value)
+        {
+            if (value == 0)
+            {
+                Player.SetStatusMessage($"Ice Barrier no longer on Cooldown!");
+                return;
+            }
+            Player.SetStatusMessage($"Ice Barrier on Cooldown for {value} seconds.");
         }
 
         private void PlayerPreHurt(DynamicHook hookData)
@@ -184,52 +199,17 @@ namespace WCS.Races
 
         private void PlayerAbilityExec()
         {
-            int dmgRed = 10 + (5 * Level);
-            damageReduction[Player.Controller.Handle] = dmgRed;
+            float cooldown = cooldowns.GetCooldown(Player.Controller, "ice_barrier");
 
-            Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Ice Barrier {ChatColors.Blue}({dmgRed} HP) {ChatColors.Default}has {ChatColors.Red}activated!");
+            if (cooldown == 0)
+            {
+                int dmgRed = 10 + (5 * Level);
+                damageReduction[Player.Controller.Handle] = dmgRed;
 
-            Cooldowns[Player.Controller.Handle] = 10;
-            new Timer(1.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 9;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 9 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(2.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 8;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 8 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(3.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 7;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 7 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(4.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 6;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 6 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(5.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 5;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 5 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(6.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 4;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 4 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(7.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 3;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 3 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(8.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 2;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 2 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(9.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 1;
-                Player.SetStatusMessage("Ice Barrier on Cooldown for 1 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(10.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 0;
-                Player.SetStatusMessage("Ice Barrier no longer on Cooldown.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
+                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Ice Barrier {ChatColors.Blue}({dmgRed} HP) {ChatColors.Default}has {ChatColors.Red}activated!");
+
+                cooldowns.SetCooldown(Player.Controller, "ice_barrier", 10);
+            }
         }
     }
 
@@ -241,83 +221,51 @@ namespace WCS.Races
 
         public override int MaxLevel => 8;
         public override int RequiredLevel => 0;
-        public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
+
+        public Cooldowns cooldowns = new Cooldowns();
 
         public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
-            HookEvent<EventPlayerSpawn>("player_spawn", PlayerSpawn);
+            if (player != null)
+            {
+                cooldowns.SetCooldown(player.Controller, "curing_ritual", 0);
+                cooldowns.AddCooldownExtension(player.Controller, "curing_ritual", OnCooldownChange);
+            }
 
             HookAbility(1, PlayerUltimate);
         }
 
-        private void PlayerSpawn(GameEvent @event)
+        public void OnCooldownChange(float value)
         {
-            Cooldowns[Player.Controller.Handle] = 0;
+            if (value == 0)
+            {
+                Player.SetStatusMessage($"Curing Ritual no longer on Cooldown!");
+                return;
+            }
+            Player.SetStatusMessage($"Curing Ritual on Cooldown for {value} seconds.");
         }
 
         private void PlayerUltimate()
         {
             if (Level < 1) return;
-            int cooldown = Cooldowns[Player.Controller.Handle];
-            if (cooldown != 0)
+            float cooldown = cooldowns.GetCooldown(Player.Controller, "curing_ritual");
+
+            if (cooldown == 0)
             {
-                Player.Controller.PrintToCenterHtml($"<font color=#FFFFFF>Curing Ritual on Cooldown for {cooldown} seconds.</font>");
-                return;
+                int cash = Player.Controller.InGameMoneyServices.Account;
+
+                if (cash >= 100)
+                {
+                    int hpToAdd = 20 + (5 * Level);
+                    Player.Controller.PlayerPawn.Value.Health += hpToAdd;
+                    Player.Controller.InGameMoneyServices.Account -= 100;
+                    Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Green}healed {ChatColors.Gold}{hpToAdd}HP {ChatColors.Default}for {ChatColors.Green}$100.");
+                }
+
+                cooldowns.SetCooldown(Player.Controller, "curing_ritual", 10);
             }
-
-            int cash = Player.Controller.InGameMoneyServices.Account;
-
-            if (cash >= 100)
-            {
-                int hpToAdd = 20 + (5 * Level);
-                Player.Controller.PlayerPawn.Value.Health += hpToAdd;
-                Player.Controller.InGameMoneyServices.Account -= 100;
-                Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Green}healed {ChatColors.Gold}{hpToAdd}HP {ChatColors.Default}for {ChatColors.Green}$100.");
-            }
-
-            Cooldowns[Player.Controller.Handle] = 10;
-            new Timer(1.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 9;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 9 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(2.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 8;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 8 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(3.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 7;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 7 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(4.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 6;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 6 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(5.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 5;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 5 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(6.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 4;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 4 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(7.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 3;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 3 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(8.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 2;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 2 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(9.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 1;
-                Player.SetStatusMessage("Curing Ritual on Cooldown for 1 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(10.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 0;
-                Player.SetStatusMessage("Curing Ritual no longer on Cooldown.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
         }
     }
 
