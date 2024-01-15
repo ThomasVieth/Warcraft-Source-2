@@ -154,7 +154,7 @@ namespace WCS
         public static WCS Instance => _instance;
 
         public override string ModuleName => "WarcraftSource2";
-        public override string ModuleVersion => "2.2.0";
+        public override string ModuleVersion => "2.3.0";
 
         public string ModuleChatPrefix;
 
