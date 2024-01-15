@@ -455,6 +455,8 @@ namespace WCS
                     wcPlayer.QuickChangeRace(race.InternalName);
                     database.SaveCurrentRace(player);
                     database.LoadClientFromDatabase(_raceManager, player);
+
+                    player.PrintToChat($"{ModuleChatPrefix}{ChatColors.Red}Changed {player.PlayerName} to {ChatColors.Green}{race.DisplayName}{ChatColors.Red}.");
                 }));
             }
 
