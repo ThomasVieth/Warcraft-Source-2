@@ -121,13 +121,17 @@ namespace WCS.Races
         public override int MaxLevel => 8;
         public override int RequiredLevel => 8;
 
-        public Dictionary<IntPtr, int> Cooldowns = new Dictionary<IntPtr, int>();
+        public Cooldowns cooldowns = new Cooldowns();
 
         public override void Load(IWarcraftPlayer player)
         {
             Player = player;
 
-            HookEvent<EventPlayerSpawn>("player_spawn", PlayerSpawn);
+            if (player != null)
+            {
+                cooldowns.SetCooldown(player.Controller, "teleport", 0);
+                cooldowns.AddCooldownExtension(player.Controller, "teleport", OnCooldownChange);
+            }
 
             HookAbility(1, PlayerUltimate);
         }
@@ -137,57 +141,41 @@ namespace WCS.Races
             return (Math.PI / 180) * angle;
         }
 
-        private void PlayerSpawn(GameEvent @event)
+        public void OnCooldownChange(float value)
         {
-            Cooldowns[Player.Controller.Handle] = 0;
+            if (value == 0)
+            {
+                Player.SetStatusMessage($"Teleport no longer on Cooldown!");
+                return;
+            }
+            Player.SetStatusMessage($"Teleport on Cooldown for {value} seconds.");
         }
 
         private void PlayerUltimate()
         {
             if (Level < 1) return;
-            int cooldown = Cooldowns[Player.Controller.Handle];
-            if (cooldown != 0)
+            float cooldown = cooldowns.GetCooldown(Player.Controller, "teleport");
+
+            if (cooldown == 0)
             {
-                Player.Controller.PrintToCenterHtml($"<font color=#FFFFFF>Teleport on Cooldown for {cooldown} seconds.</font>");
-                return;
+                Vector origin = Player.Controller.PlayerPawn.Value.CBodyComponent.SceneNode.AbsOrigin;
+                origin.Z += 5;
+                QAngle angle = Player.Controller.PlayerPawn.Value.EyeAngles;
+
+                double yaw = ConvertToRadians(angle.Y);
+                double pitch = ConvertToRadians(angle.X);
+                var Y = Math.SinCos(yaw);
+                var P = Math.SinCos(pitch);
+
+                Vector currentDirection = new Vector((float)(Y.Cos * P.Cos), (float)(Y.Sin * P.Cos), ((float)P.Sin * -1));
+                currentDirection.X *= 1000 + (Level * 100);
+                currentDirection.Y *= 1000 + (Level * 100);
+                currentDirection.Z += 150;
+
+                Player.Controller.PlayerPawn.Value.Teleport(origin, angle, currentDirection);
+
+                cooldowns.SetCooldown(Player.Controller, "teleport", 8);
             }
-            Vector origin = Player.Controller.PlayerPawn.Value.CBodyComponent.SceneNode.AbsOrigin;
-            origin.Z += 5;
-            QAngle angle = Player.Controller.PlayerPawn.Value.EyeAngles;
-
-            double yaw = ConvertToRadians(angle.Y);
-            double pitch = ConvertToRadians(angle.X);
-            var Y = Math.SinCos(yaw);
-            var P = Math.SinCos(pitch);
-
-            Vector currentDirection = new Vector((float)(Y.Cos * P.Cos), (float)(Y.Sin * P.Cos), ((float)P.Sin * -1));
-            currentDirection.X *= 1000 + (Level * 100);
-            currentDirection.Y *= 1000 + (Level * 100);
-            currentDirection.Z += 150;
-
-            Player.Controller.PlayerPawn.Value.Teleport(origin, angle, currentDirection);
-
-            Cooldowns[Player.Controller.Handle] = 5;
-            new Timer(1.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 4;
-                Player.SetStatusMessage("Teleport on Cooldown for 4 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(2.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 3;
-                Player.SetStatusMessage("Teleport on Cooldown for 3 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(3.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 2;
-                Player.SetStatusMessage("Teleport on Cooldown for 2 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(4.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 1;
-                Player.SetStatusMessage("Teleport on Cooldown for 1 seconds.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
-            new Timer(5.0f, () => {
-                Cooldowns[Player.Controller.Handle] = 0;
-                Player.SetStatusMessage("Teleport no longer on Cooldown.");
-            }, TimerFlags.STOP_ON_MAPCHANGE);
         }
     }
 

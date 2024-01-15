@@ -135,7 +135,6 @@ namespace WCS
         public void SetStatusMessage(string status, float duration = 2f)
         {
             statusMessage = status;
-            new Timer(duration, () => statusMessage = null, 0);
         }
     }
 
@@ -169,6 +168,7 @@ namespace WCS
         public ILogger<WCS> _logger;
 
         public Dictionary<IntPtr, IWarcraftPlayer> WarcraftPlayers = new();
+        public Cooldowns cooldownSystem;
         public EventSystem eventSystem;
         public Utils utilities;
         public WarcraftDatabase database;
@@ -216,6 +216,9 @@ namespace WCS
             if (_instance == null) _instance = this;
 
             database = new WarcraftDatabase();
+
+            cooldownSystem = new Cooldowns(this);
+            cooldownSystem.Initialize();
 
             _raceManager.Load();
 
@@ -295,7 +298,7 @@ namespace WCS
         // REPEATERS
         private void OnMapStartHandler(string mapName)
         {
-            AddTimer(2f, PlayerInfoUpdate, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
+            AddTimer(0.5f, PlayerInfoUpdate, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
             AddTimer(60.0f, database.SaveClients, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
             AddTimer(120.0f, RunAdverts, TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
         }
