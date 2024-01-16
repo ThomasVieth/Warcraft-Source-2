@@ -170,7 +170,7 @@ namespace WCS.Races
                 Vector currentDirection = new Vector((float)(Y.Cos * P.Cos), (float)(Y.Sin * P.Cos), ((float)P.Sin * -1));
                 currentDirection.X *= 1000 + (Level * 100);
                 currentDirection.Y *= 1000 + (Level * 100);
-                currentDirection.Z = 400;
+                currentDirection.Z *= 1000 + (Level * 100);
 
                 Player.Controller.PlayerPawn.Value.Teleport(origin, angle, currentDirection);
 
