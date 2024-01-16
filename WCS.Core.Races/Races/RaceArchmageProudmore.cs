@@ -16,7 +16,7 @@ namespace WCS.Core.Races.Races
     {
         public override string InternalName => "earthquake";
         public override string DisplayName => "Earthquake";
-        public override string Description => $"0 - 12% chance upon damaging an enemy to shake them.";
+        public override string Description => $"0 - 36% chance upon damaging an enemy to shake them.";
 
         public override int MaxLevel => 6;
         public override int RequiredLevel => 0;
@@ -37,7 +37,7 @@ namespace WCS.Core.Races.Races
             Vector velocity = victim.PlayerPawn.Value.AbsVelocity;
 
             int chance = Convert.ToInt32(Random.Shared.NextSingle() * 100);
-            int playerChance = (2 * Level);
+            int playerChance = (6 * Level);
             if (chance < playerChance)
             {
                 velocity.Z += 100;
