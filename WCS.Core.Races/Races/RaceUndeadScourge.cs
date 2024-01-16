@@ -23,6 +23,13 @@ using System.Drawing;
 
 using static WCS.API.Effects;
 using WCS.API;
+using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Modules.Memory;
+using System.Runtime.CompilerServices;
+using System.Text;
+using CounterStrikeSharp.API.Modules.Entities;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace WCS.Races
 {
@@ -97,6 +104,23 @@ namespace WCS.Races
 
         private void PlayerSpawn(GameEvent @event)
         {
+            Vector playerOrigin = Player.Controller.PlayerPawn.Value.CBodyComponent.SceneNode.AbsOrigin;
+            playerOrigin.Z += 5;
+            List<Vector> circleCoords = CalculateCircleEdgeCoords(playerOrigin, 40, 24);
+            Vector lastCoord = circleCoords.Last();
+            foreach (Vector coord in circleCoords)
+            {
+                DrawLaserBetween(
+                    Player.Controller,
+                    lastCoord,
+                    coord,
+                    Color.DarkRed,
+                    2.0f,
+                    3.0f
+                );
+                lastCoord = coord;
+            }
+
             int unholyAuraLevel = Level;
             float speedModifier = 1.0f + (0.08f * unholyAuraLevel);
             Player.Controller.PlayerPawn.Value.VelocityModifier = speedModifier;

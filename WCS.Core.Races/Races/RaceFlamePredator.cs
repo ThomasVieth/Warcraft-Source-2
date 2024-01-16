@@ -202,14 +202,6 @@ namespace WCS.Core.Races.Races
             CCSPlayerController victimController = @event.Userid;
             CCSPlayerPawn victimPawn = victimController.PlayerPawn.Value;
 
-            CFire fire = Utilities.CreateEntityByName<CFire>("env_fire");
-            fire.FireSize = 20.0f;
-            fire.HeatLevel = 20.0f;
-            fire.FireType = 1;
-            fire.Spawnflags = 13;
-            fire.DispatchSpawn();
-            fire.Teleport(victimPawn!.CBodyComponent!.SceneNode!.AbsOrigin, victimPawn.CBodyComponent.SceneNode!.AbsRotation, new Vector());
-
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Red}{victimController.PlayerName} set on fire!");
         }
     }

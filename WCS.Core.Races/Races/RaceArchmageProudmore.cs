@@ -6,9 +6,11 @@ using CounterStrikeSharp.API.Modules.Utils;
 using Dapper;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using WCS.API;
 using WCS.Races;
+using static WCS.API.Effects;
 
 namespace WCS.Core.Races.Races
 {
@@ -170,6 +172,7 @@ namespace WCS.Core.Races.Races
                     Player.Controller.PlayerPawn.Value!.MoveType = MoveType_t.MOVETYPE_WALK;
                     Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}... and back down.");
                     flyState[Player.Controller.Handle] = false;
+                    DoEffect(Player.Controller.PlayerPawn.Value.CBodyComponent.SceneNode.AbsOrigin);
                 }
                 else // is walking
                 {
@@ -181,8 +184,66 @@ namespace WCS.Core.Races.Races
                     Player.Controller.PlayerPawn.Value!.MoveType = MoveType_t.MOVETYPE_FLYGRAVITY;
                     Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Gold}Lift off!");
                     flyState[Player.Controller.Handle] = true;
+                    DoEffect(Player.Controller.PlayerPawn.Value.CBodyComponent.SceneNode.AbsOrigin);
                 }
                 cooldowns.SetCooldown(Player.Controller, "lift_off", 4);
+            }
+        }
+
+        private void DoEffect(Vector playerOrigin)
+        {
+            playerOrigin.Z += 5;
+
+            List<Vector> circleCoords = CalculateCircleEdgeCoords(playerOrigin, 40, 24);
+            Vector lastCoord = circleCoords.Last();
+            foreach (Vector coord in circleCoords)
+            {
+                DrawLaserBetween(
+                    Player.Controller,
+                    lastCoord,
+                    coord,
+                    Color.Gold,
+                    0.5f,
+                    3.0f
+                );
+                lastCoord = coord;
+            }
+
+            List<Vector> circleCoords1 = CalculateCircleEdgeCoords(playerOrigin, 30, 24);
+            Vector lastCoord1 = circleCoords1.Last();
+            foreach (Vector coord1 in circleCoords1)
+            {
+                new Timer(0.33f, () => {
+                    DrawLaserBetween(
+                        Player.Controller,
+                        lastCoord1,
+                        coord1,
+                        Color.Gold,
+                        0.5f,
+                        3.0f
+                    );
+                    lastCoord1 = coord1;
+                }
+                );
+                
+            }
+
+            List<Vector> circleCoords2 = CalculateCircleEdgeCoords(playerOrigin, 20, 24);
+            Vector lastCoord2 = circleCoords2.Last();
+            foreach (Vector coord2 in circleCoords2)
+            {
+                new Timer(0.66f, () => {
+                    DrawLaserBetween(
+                        Player.Controller,
+                        lastCoord2,
+                        coord2,
+                        Color.Gold,
+                        0.5f,
+                        3.0f
+                    );
+                    lastCoord2 = coord2;
+                }
+                );
             }
         }
     }

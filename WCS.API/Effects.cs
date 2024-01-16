@@ -25,5 +25,28 @@ namespace WCS.API
             beam.DispatchSpawn();
             Timer t = new Timer(life, beam.Remove);
         }
+
+        public static List<Vector> CalculateCircleEdgeCoords(Vector center, float radius, int parts)
+        {
+            float x = center.X;
+            float y = center.Y;
+
+            List<Vector> returnValue = new List<Vector>();
+
+            double part = 2 * Math.PI / parts;
+
+            for (int i = 0; i < parts; i++)
+            {
+                returnValue.Add(
+                    new Vector(
+                        x + ((float)(radius * Math.Sin(part * i))),
+                        y + ((float)(radius * Math.Cos(part * i))),
+                        center.Z
+                    )
+                );
+            }
+
+            return returnValue;
+        }
     }
 }
