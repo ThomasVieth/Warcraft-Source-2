@@ -39,7 +39,7 @@ namespace WCS.Core.Races.Races
         public void OnPlayerSpawn(GameEvent @event)
         {
             int auraLevel = Level;
-            int healthAddition = 15 * auraLevel;
+            int healthAddition = 10 * auraLevel;
             Player.Controller.PlayerPawn.Value!.Health += healthAddition;
             Utilities.SetStateChanged(Player.Controller.PlayerPawn.Value, "CBaseEntity", "m_iHealth");
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Red}Health {ChatColors.Default}increased by {ChatColors.Green}{healthAddition} {ChatColors.Default}HP.");
