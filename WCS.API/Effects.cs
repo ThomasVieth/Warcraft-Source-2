@@ -8,12 +8,12 @@ namespace WCS.API
 {
     public class Effects
     {
-        public static void DrawLaserBetween(CCSPlayerController player, Vector startPos, Vector endPos, Color color, float life, float width)
+        public static CBeam DrawLaserBetween(CCSPlayerController player, Vector startPos, Vector endPos, Color color, float life, float width)
         {
             CBeam beam = Utilities.CreateEntityByName<CBeam>("beam");
             if (beam == null)
             {
-                return;
+                return null;
             }
             beam.Render = color;
             beam.Width = width;
@@ -24,6 +24,8 @@ namespace WCS.API
             beam.EndPos.Z = endPos.Z;
             beam.DispatchSpawn();
             Timer t = new Timer(life, beam.Remove);
+
+            return beam;
         }
 
         public static List<Vector> CalculateCircleEdgeCoords(Vector center, float radius, int parts)
