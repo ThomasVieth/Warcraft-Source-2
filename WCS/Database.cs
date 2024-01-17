@@ -68,10 +68,10 @@ namespace WCS
             ");
         }
 
-        public bool ClientExistsInDatabase(ulong steamid)
+        public bool ClientExistsInDatabase(ulong steamId)
         {
             return _connection.ExecuteScalar<int>("select count(*) from players where steamid = @steamid",
-                new { steamid }) > 0;
+                new { steamid = steamId }) > 0;
         }
 
         public void AddNewClientToDatabase(CCSPlayerController player)

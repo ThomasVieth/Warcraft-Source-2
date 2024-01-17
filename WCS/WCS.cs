@@ -217,6 +217,7 @@ namespace WCS
             if (_instance == null) _instance = this;
 
             database = new WarcraftDatabase();
+            database.Initialize(ModuleDirectory);
 
             cooldownSystem = new Cooldowns(this);
             cooldownSystem.Initialize();
@@ -231,8 +232,6 @@ namespace WCS
 
             restrictions = new Restrictions(this);
             restrictions.Initialize(hotReload);
-
-            database.Initialize(ModuleDirectory);
 
             AddCommand("ability", "ability", AbilityPressed);
             AddCommand("ultimate", "ultimate", UltimatePressed);
