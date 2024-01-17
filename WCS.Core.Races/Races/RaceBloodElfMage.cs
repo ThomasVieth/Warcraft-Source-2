@@ -260,6 +260,7 @@ namespace WCS.Races
                 {
                     int hpToAdd = 20 + (5 * Level);
                     Player.Controller.PlayerPawn.Value.Health += hpToAdd;
+                    Utilities.SetStateChanged(Player.Controller.PlayerPawn.Value, "CBaseEntity", "m_iHealth");
                     Player.Controller.InGameMoneyServices.Account -= 100;
                     Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Blue}You {ChatColors.Green}healed {ChatColors.Gold}{hpToAdd}HP {ChatColors.Default}for {ChatColors.Green}$100.");
                 }

@@ -68,6 +68,7 @@ namespace WCS.Races
             }
 
             attacker.PlayerPawn.Value.Health = newHealth;
+            Utilities.SetStateChanged(attacker.PlayerPawn.Value, "CBaseEntity", "m_iHealth");
 
             if (victim != null & !string.IsNullOrEmpty(victim.PlayerName) && amountToHeal > 0)
             {
