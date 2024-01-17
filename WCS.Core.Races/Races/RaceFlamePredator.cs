@@ -41,6 +41,7 @@ namespace WCS.Core.Races.Races
             int auraLevel = Level;
             int healthAddition = 15 * auraLevel;
             Player.Controller.PlayerPawn.Value!.Health += healthAddition;
+            Utilities.SetStateChanged(Player.Controller.PlayerPawn.Value, "CBaseEntity", "m_iHealth");
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Red}Health {ChatColors.Default}increased by {ChatColors.Green}{healthAddition} {ChatColors.Default}HP.");
             
             int unholyAuraLevel = Level;
@@ -183,6 +184,38 @@ namespace WCS.Core.Races.Races
             HookEvent<EventPlayerHurt>("player_hurt_other", PlayerHurtOther);
         }
 
+        public static string acceptInputWindowsSig = @"\x48\x89\x5C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x40\x49\x8B\xF0";
+        public static string acceptInputLinuxSig = @"\x55\x48\x89\xE5\x41\x57\x49\x89\xFF\x41\x56\x48\x8D\x7D\xC0";
+
+        public static MemoryFunctionVoid<nint, string, nint, nint, nint, int> AcceptEntityInputFunc = new(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? acceptInputLinuxSig : acceptInputWindowsSig);
+        public static Action<nint, string, nint, nint, nint, int> AcceptEntityInput = AcceptEntityInputFunc.Invoke;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct variant_t
+        {
+            public nint valuePtr;
+            public fieldtype_t fieldType;
+            public byte unk0;
+        }
+
+        public unsafe void AcceptInput(nint handle, string inputName, nint activator, nint caller, string value)
+        {
+            byte[] str_bytes = Encoding.ASCII.GetBytes(value + "\0");
+
+            variant_t* _param = (variant_t*)Marshal.AllocHGlobal(0xA);
+            IntPtr param_str_ptr = Marshal.AllocHGlobal(str_bytes.Length);
+
+            _param->fieldType = fieldtype_t.FIELD_STRING;
+            _param->valuePtr = param_str_ptr;
+
+            Marshal.Copy(str_bytes, 0, param_str_ptr, str_bytes.Length);
+
+            AcceptEntityInput(handle, inputName, activator, caller, (nint)_param, 0);
+
+            Marshal.FreeHGlobal(param_str_ptr);
+            Marshal.FreeHGlobal((nint)_param);
+        }
+
         public void PlayerHurtOther(GameEvent @obj)
         {
             if (Level == 0)
@@ -201,6 +234,17 @@ namespace WCS.Core.Races.Races
 
             CCSPlayerController victimController = @event.Userid;
             CCSPlayerPawn victimPawn = victimController.PlayerPawn.Value;
+
+            CMolotovProjectile fireProjectile = Utilities.CreateEntityByName<CMolotovProjectile>("molotov_projectile");
+            CGameSceneNode node = victimPawn.CBodyComponent.SceneNode;
+            Vector pos = node!.AbsOrigin;
+            pos.Z += 10;
+            fireProjectile.TeamNum = Player.Controller.TeamNum;
+            fireProjectile.Damage = 45.0f;
+            fireProjectile.DmgRadius = 50;
+            fireProjectile.Teleport(pos, node!.AbsRotation, new Vector(0, 0, -10));
+            fireProjectile.DispatchSpawn();
+            AcceptInput(fireProjectile.Handle, "InitializeSpawnFromWorld", Player.Controller.PlayerPawn.Value!.Handle, Player.Controller.PlayerPawn.Value!.Handle, "");
 
             Player.Controller.PrintToChat($"{WCS.Instance.ModuleChatPrefix}{ChatColors.Red}{victimController.PlayerName} set on fire!");
         }
