@@ -268,10 +268,11 @@ namespace WCS
 
                 attacker.GetWarcraftPlayer()?.SetStatusMessage(xpString);
                 attacker.PrintToChat(xpString);
+
+                attacker?.GetWarcraftPlayer()?.GetRace()?.InvokeEvent("player_kill", @event);
             }
 
             victim?.GetWarcraftPlayer()?.GetRace()?.InvokeEvent("player_death", @event);
-            attacker?.GetWarcraftPlayer()?.GetRace()?.InvokeEvent("player_kill", @event);
             
             return HookResult.Continue;
         }
