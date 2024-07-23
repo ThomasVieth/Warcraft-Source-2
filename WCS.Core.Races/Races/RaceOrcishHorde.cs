@@ -272,6 +272,7 @@ namespace WCS.Races
                     attackerHandle = Player.Controller.PlayerPawn.Value.Handle;
                     damageInfo.DamageFlags = TakeDamageFlags_t.DFLAG_IGNORE_ARMOR;
                     damageInfo.Damage = 30 + (5 * Level);
+                    damageInfo.BitsDamageType = (int)DamageTypes_t.DMG_BULLET;
                     VirtualFunctions.CBaseEntity_TakeDamageOld(ply.PlayerPawn.Value, damageInfo);
                     Marshal.FreeHGlobal(ptr);
                     DrawLaserBetween(

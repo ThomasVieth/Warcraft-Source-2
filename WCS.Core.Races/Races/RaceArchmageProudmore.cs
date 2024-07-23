@@ -106,7 +106,15 @@ namespace WCS.Core.Races.Races
             int chance = Convert.ToInt32(Random.Shared.NextSingle() * 100);
             if (chance < chanceLevel)
             {
-                new Timer(0.5f, Player.Controller.RemoveWeapons);
+                foreach (CHandle<CBasePlayerWeapon> weapon in Player.Controller.PlayerPawn.Value.WeaponServices.MyWeapons.ToArray())
+                {
+                    if (weapon.Value!.DesignerName == "weapon_knife" || weapon!.Value!.DesignerName == "weapon_c4")
+                    {
+                        continue;
+                    }
+
+                    new Timer(0.5f, weapon.Value.Remove);
+                }
 
                 if (Level > 3)
                 {
@@ -186,7 +194,7 @@ namespace WCS.Core.Races.Races
                     flyState[Player.Controller.Handle] = true;
                     DoEffect(Player.Controller.PlayerPawn.Value.CBodyComponent.SceneNode.AbsOrigin);
                 }
-                cooldowns.SetCooldown(Player.Controller, "lift_off", 4);
+                cooldowns.SetCooldown(Player.Controller, "lift_off", 1);
             }
         }
 
